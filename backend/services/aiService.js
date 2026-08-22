@@ -30,7 +30,7 @@ const isRetryable = (error) => {
  * Priority order of extraction strategies:
  *   1. Entire content is already valid JSON            → parse directly
  *   2. <think>…</think> block → strip it, parse remainder
- *   3. JSON found INSIDE the <think> block (Qwen puts answer in think block)
+ *   3. JSON found INSIDE the <think> block (some reasoning models put answer inside think block)
  *   4. Markdown code fence   → strip fences, parse interior
  *   5. Extract substring between first '{' and last '}'
  *   6. All of the above + repair unescaped LaTeX backslashes (\pi → \\pi)
@@ -59,7 +59,7 @@ export const safeExtractJSON = (rawContent) => {
   // ── Helper: extract the outermost {...} block ────────────────────────────
   const extractBraceBlock = (str) => {
     const start = str.indexOf('{');
-    const end   = str.lastIndexOf('}');
+    const end = str.lastIndexOf('}');
     if (start === -1 || end === -1 || end <= start) return null;
     return str.substring(start, end + 1);
   };
@@ -110,11 +110,11 @@ export const safeExtractJSON = (rawContent) => {
       }
     }
 
-    // 3b: JSON is INSIDE the <think> block (Qwen sometimes does this)
+    // 3b: JSON is INSIDE the <think> block (some reasoning models put the answer here)
     const thinkMatch = content.match(/<think>([\s\S]*?)<\/think>/i);
     if (thinkMatch) {
       const insideThink = thinkMatch[1].trim();
-      const braceBlock  = extractBraceBlock(insideThink);
+      const braceBlock = extractBraceBlock(insideThink);
       if (braceBlock) {
         parsed = tryParse(braceBlock) || repairAndParse(braceBlock);
         if (parsed) {
@@ -158,7 +158,7 @@ export const safeExtractJSON = (rawContent) => {
 export const aiService = {
   generateAIResponse: async (prompt, systemInstruction) => {
     const geminiKey = process.env.GEMINI_API_KEY;
-    const groqKey   = process.env.GROQ_API_KEY;
+    const groqKey = process.env.GROQ_API_KEY;
 
     // ── 1. Try Gemini ────────────────────────────────────────────────────
     if (geminiKey && geminiKey !== 'your_gemini_api_key_here') {
@@ -205,13 +205,11 @@ export const aiService = {
 
 // ────────────────────────────────────────────────────────────────────────────
 const callGroq = async (prompt, systemInstruction, apiKey) => {
-  console.log('[AI] Provider: Groq');
   const groqModel = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+  console.log('[AI] Groq model:', groqModel);
   const groq = new Groq({ apiKey });
 
   // Append strict JSON output rules to the existing system instruction.
-  // llama-3.3-70b-versatile natively supports response_format json_object,
-  // so we get guaranteed valid JSON without any regex extraction hacks.
   const groqSystem = `${systemInstruction}
 
 MANDATORY OUTPUT FORMAT:
@@ -231,10 +229,12 @@ Return ONLY valid JSON matching the schema above. No markdown. No explanation. N
       model: groqModel,
       messages: [
         { role: 'system', content: groqSystem },
-        { role: 'user',   content: groqUserPrompt }
+        { role: 'user', content: groqUserPrompt }
       ],
       temperature: 0.7,
-      response_format: { type: 'json_object' }, // Supported by llama-3.3-70b-versatile
+      // response_format json_object is omitted: the system prompt contains JSON schema
+      // examples with { } braces which cause Groq's validator to fail (json_validate_failed).
+      // safeExtractJSON() reliably extracts clean JSON from Llama's plain-text response.
     });
 
     const rawContent = response.choices[0]?.message?.content;
