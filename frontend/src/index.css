@@ -1,0 +1,130 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #F5F7FA;
+    --surface: #FFFFFF;
+    --primary: #1E3A8A;
+    --primary-hover: #1D4ED8;
+    --primary-glow: rgba(30, 58, 138, 0.08);
+    --accent: #FBBF24;
+    --accent-glow: rgba(251, 191, 36, 0.15);
+    --text-primary: #172033;
+    --text-secondary: #64748B;
+    --text-muted: #94A3B8;
+    --border: #E2E8F0;
+    --success: #059669;
+    --success-glow: rgba(5, 150, 105, 0.12);
+  }
+
+  html.dark {
+    --background: #080B12;
+    --surface: #101522;
+    --primary: #3B82F6;
+    --primary-hover: #60A5FA;
+    --primary-glow: rgba(59, 130, 246, 0.08);
+    --accent: #FBBF24;
+    --accent-glow: rgba(251, 191, 36, 0.15);
+    --text-primary: #F8FAFC;
+    --text-secondary: #94A3B8;
+    --text-muted: #64748B;
+    --border: #1E293B;
+    --success: #10B981;
+    --success-glow: rgba(16, 185, 129, 0.12);
+  }
+
+  body {
+    @apply font-body min-h-screen overflow-x-hidden antialiased;
+    background-color: var(--background);
+    color: var(--text-primary);
+    line-height: 1.6;
+    transition: background-color 0.3s ease, color 0.3s ease;
+  }
+}
+
+@keyframes border-rotate {
+  100% {
+    transform: rotate(360deg);
+  }
+}
+@keyframes pulse-soft {
+  0%, 100% {
+    opacity: 0.7;
+    box-shadow: 0 0 15px rgba(251, 191, 36, 0.4), 0 0 30px rgba(245, 158, 11, 0.2);
+  }
+  50% {
+    opacity: 0.95;
+    box-shadow: 0 0 25px rgba(251, 191, 36, 0.6), 0 0 45px rgba(245, 158, 11, 0.4);
+  }
+}
+
+.glow-border-container {
+  position: relative;
+  overflow: hidden;
+  padding: 1.5px;
+  border-radius: 24px;
+}
+
+.glow-border-animate::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: conic-gradient(
+    from 0deg,
+    transparent 20%,
+    #FBBF24 40%,
+    #F59E0B 55%,
+    #FCD34D 75%,
+    #D97706 90%,
+    transparent 100%
+  );
+  animation: border-rotate 4.5s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glow-border-animate::before {
+    animation: none;
+    background: linear-gradient(135deg, #FBBF24, #F59E0B);
+  }
+}
+
+.glow-border-content {
+  position: relative;
+  background: #0b0d16;
+  border-radius: 22.5px;
+  z-index: 1;
+}
+
+.glow-soft-pulse {
+  animation: pulse-soft 3.5s ease-in-out infinite;
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.22s ease-out both;
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.28s ease-out both;
+}
+
+/* Scrollbar styles for overflow-x areas */
+.scrollbar-thin::-webkit-scrollbar { height: 4px; }
+.scrollbar-thin::-webkit-scrollbar-track { background: transparent; }
+.scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(100,116,139,0.3); border-radius: 4px; }
+
+

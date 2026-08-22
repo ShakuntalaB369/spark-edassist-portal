@@ -1,0 +1,234 @@
+{
+  "AGE_GROUPS": [
+    { "id": "6-10", "title": "Age 6-10", "subtitle": "Building Foundations" },
+    { "id": "11-14", "title": "Age 11-14", "subtitle": "Developing Competencies" },
+    { "id": "15-18", "title": "Age 15-18", "subtitle": "Preparing Future Leaders" }
+  ],
+  "SUBJECTS": [
+    "Mathematics",
+    "Physics",
+    "Chemistry",
+    "Biology",
+    "Science",
+    "English",
+    "Environmental Science",
+    "Earth Science",
+    "Astronomy",
+    "Computer Science",
+    "Artificial Intelligence",
+    "Information Technology",
+    "Engineering",
+    "Medicine and Health Sciences",
+    "Economics",
+    "Business Studies",
+    "Accounting",
+    "Finance",
+    "Commerce",
+    "Political Science",
+    "International Relations",
+    "History",
+    "Geography",
+    "Sociology",
+    "Psychology",
+    "Philosophy",
+    "Law",
+    "Civics",
+    "Education",
+    "Anthropology",
+    "Archaeology",
+    "Statistics",
+    "Data Science",
+    "Literature",
+    "Languages",
+    "Linguistics",
+    "Journalism",
+    "Media Studies",
+    "Communication",
+    "Fine Arts",
+    "Visual Arts",
+    "Music",
+    "Performing Arts",
+    "Design",
+    "Architecture",
+    "Agriculture",
+    "Veterinary Science",
+    "Sports Science",
+    "Physical Education",
+    "Hospitality",
+    "Tourism",
+    "General",
+    "Interdisciplinary",
+    "Vocational Studies"
+  ],
+  "EDU_CONTEXTS": [
+    { "id": "south-korea", "title": "South Korea", "subtitle": "Academic Excellence" },
+    { "id": "japan", "title": "Japan", "subtitle": "Precision & Synthesis" },
+    { "id": "denmark", "title": "Denmark", "subtitle": "Collaborative Focus" },
+    { "id": "belgium", "title": "Belgium", "subtitle": "Multilingual Context" },
+    { "id": "slovenia", "title": "Slovenia", "subtitle": "Balanced Competencies" },
+    { "id": "netherlands", "title": "Netherlands", "subtitle": "Independent Inquiry" },
+    { "id": "germany", "title": "Germany", "subtitle": "Vocational Excellence" },
+    { "id": "finland", "title": "Finland", "subtitle": "Competency & Trust" },
+    { "id": "norway", "title": "Norway", "subtitle": "Equitable Growth" },
+    { "id": "ireland", "title": "Ireland", "subtitle": "Critical Synthesis" },
+    { "id": "singapore", "title": "Singapore", "subtitle": "SkillsFuture & Tech" },
+    { "id": "france", "title": "France", "subtitle": "Structured Logic" },
+    { "id": "china", "title": "China", "subtitle": "Analytical Rigor" },
+    { "id": "hong-kong", "title": "Hong Kong", "subtitle": "Global Competence" },
+    { "id": "sweden", "title": "Sweden", "subtitle": "Self-Directed Learning" },
+    { "id": "united-kingdom", "title": "United Kingdom", "subtitle": "Analytical Synthesis" },
+    { "id": "australia", "title": "Australia", "subtitle": "Applied Skills" },
+    { "id": "iceland", "title": "Iceland", "subtitle": "Creative Exploration" },
+    { "id": "canada", "title": "Canada", "subtitle": "Inclusive Innovation" },
+    { "id": "india", "title": "India", "subtitle": "Holistic Foundation" },
+    { "id": "spain", "title": "Spain", "subtitle": "Reflective Inquiry" },
+    { "id": "ib-model", "title": "IB Model", "subtitle": "Holistic Synthesis" },
+    { "id": "un-sdg-4", "title": "UN SDG 4", "subtitle": "Equitable & Inclusive" }
+  ],
+  "PEERS": [
+    { "name": "Maya", "role": "Researcher", "defaultStatus": "Waiting for instructions" },
+    { "name": "Dev", "role": "Designer", "defaultStatus": "Waiting for instructions" },
+    { "name": "Chloe", "role": "Presenter", "defaultStatus": "Waiting for instructions" }
+  ],
+  "QUIZ_QUESTIONS": {
+    "6-10": [
+      {
+        "question": "You notice that a plant near a window bends and grows towards the sunlight outside. Why does it do this?",
+        "options": [
+          "It wants to see the outside garden.",
+          "It is trying to get closer to the warm glass.",
+          "It is seeking light to perform photosynthesis and make its own food.",
+          "It is trying to escape the dark room."
+        ],
+        "correctIndex": 2,
+        "taxonomy": "Level 2: Conceptual Understanding",
+        "explanation": "Plants exhibit phototropism—growing towards light sources—because light is essential for them to create glucose (energy) via photosynthesis."
+      },
+      {
+        "question": "If you leave a shallow cup of water out in the hot sun, the water level goes down after a few hours. What happened?",
+        "options": [
+          "The sun drank the water directly.",
+          "The liquid water evaporated, changing into an invisible gas called water vapor.",
+          "The water shrank because of the heat.",
+          "The cup leaked or absorbed the water."
+        ],
+        "correctIndex": 1,
+        "taxonomy": "Level 1: Basic Observation",
+        "explanation": "Liquid water absorbs heat energy from the sun and undergoes evaporation, transitioning from a liquid state to a gaseous state (water vapor) in the air."
+      }
+    ],
+    "11-14": [
+      {
+        "question": "You are designing a solar-powered toy car. If you connect two solar panels in series instead of parallel, what happens to the electrical circuit?",
+        "options": [
+          "The total power output is cut in half.",
+          "The voltage increases while current stays the same, boosting motor speed.",
+          "The current increases while voltage stays the same, boosting battery capacity.",
+          "The circuit short-circuits and burns out."
+        ],
+        "correctIndex": 1,
+        "taxonomy": "Level 3: Applied Reasoning",
+        "explanation": "Connecting energy sources in series adds their voltages together (V_total = V1 + V2) while current remains constant, which increases the motor's speed."
+      },
+      {
+        "question": "In a forest ecosystem, if a disease kills off almost all the wolves (top predators), what is the most likely chain reaction?",
+        "options": [
+          "Other predators will immediately move in and balance the ecosystem.",
+          "Herbivore populations (like deer) will explode, leading to overgrazing and soil erosion.",
+          "Plant life will grow twice as dense because there are fewer animals running around.",
+          "The herbivores will stop reproducing because they are no longer scared."
+        ],
+        "correctIndex": 1,
+        "taxonomy": "Level 4: Systems Analysis",
+        "explanation": "This is a trophic cascade. Without a key predator, herbivore populations grow unchecked, consuming too much plant life, which degrades the soil and habitat for other species."
+      }
+    ],
+    "15-18": [
+      {
+        "question": "A municipality wants to reduce its carbon footprint. It can invest in Lithium-ion batteries or Hydrogen Fuel cells. Which is best suited for seasonal (long-term) grid energy storage?",
+        "options": [
+          "Flywheels, because they retain rotational energy with zero frictional losses.",
+          "Lithium-ion batteries, due to their low self-discharge rates over months.",
+          "Hydrogen storage, because hydrogen gas can be stored indefinitely without charge leakage.",
+          "Both technologies perform identically for seasonal storage timescales."
+        ],
+        "correctIndex": 2,
+        "taxonomy": "Level 5: Critical Synthesis",
+        "explanation": "Hydrogen storage is ideal for long-term seasonal storage because hydrogen can be stored in large geological caverns or tanks without losing charge over time, whereas batteries leak charge and have high capital costs for long-term standby capacity."
+      },
+      {
+        "question": "When implementing environmental policies, what is the primary economic trade-off between a Carbon Tax and a Cap-and-Trade system?",
+        "options": [
+          "Carbon taxes provide price certainty but quantity uncertainty; Cap-and-Trade provides quantity certainty but price uncertainty.",
+          "Carbon taxes provide quantity certainty; Cap-and-Trade provides price certainty.",
+          "Carbon taxes only affect consumers, while Cap-and-Trade only affects large factories.",
+          "There is no economic difference; both systems produce identical outcomes."
+        ],
+        "correctIndex": 0,
+        "taxonomy": "Level 6: Policy Evaluation",
+        "explanation": "A carbon tax sets a fixed price on carbon (certain price) but emissions levels can vary (uncertain quantity). Cap-and-Trade caps the quantity of emissions (certain quantity) but permit market prices fluctuate (uncertain price)."
+      }
+    ]
+  },
+  "APPLIED_SCENARIOS": {
+    "6-10": {
+      "title": "The Plastic Waste Crisis",
+      "desc": "Your school canteen is throwing away hundreds of single-use plastic cups every single day, filling up landfills and harming wildlife.",
+      "challenge": "Goal: Propose a plan to reduce plastic waste and make students excited to recycle.",
+      "choices": [
+        { "text": "Make a rule banning plastic cups immediately and punish students who bring them.", "score": 10 },
+        { "text": "Create posters and give students house points for bringing reusable water bottles.", "score": 30 },
+        { "text": "Set up color-coded bins, but let students keep throwing things away as usual.", "score": 20 }
+      ],
+      "prompt": "Write a short paragraph explaining how you would convince your classmates to recycle their cups."
+    },
+    "11-14": {
+      "title": "School Energy Conservation Project",
+      "desc": "Your school wants to reduce its electricity usage by 20% to cut costs and lower carbon emissions. The principal wants to see a student plan.",
+      "challenge": "Goal: Design a strategy to optimize lighting, heating/cooling, and student behaviors.",
+      "choices": [
+        { "text": "Turn off all heaters and air conditioners completely, regardless of the weather.", "score": 10 },
+        { "text": "Install smart occupancy sensors, swap bulbs for LEDs, and run a peer 'energy audit' team.", "score": 30 },
+        { "text": "Replace all windows with double-pane glass, even though it costs more than the school budget.", "score": 22 }
+      ],
+      "prompt": "Describe how you will measure and prove that your energy-saving ideas are actually working over a 3-month period."
+    },
+    "15-18": {
+      "title": "Community Clean Energy Transition",
+      "desc": "A low-income neighborhood is experiencing high air pollution from a nearby coal plant. The city wants to transition local homes to renewable energy.",
+      "challenge": "Goal: Address the high upfront capital costs and ensure the transition is equitable and socially inclusive.",
+      "choices": [
+        { "text": "Pass a law forcing all landlords to install solar panels immediately or pay massive fines.", "score": 12 },
+        { "text": "Create a community solar cooperative financed by municipal green bonds, offering subsidized clean energy rates.", "score": 30 },
+        { "text": "Build a small nuclear micro-reactor in the local park without public consultation.", "score": 20 }
+      ],
+      "prompt": "Detail how you will address the financial barriers of solar installations for low-income tenants who do not own their roofs."
+    }
+  },
+  "CONFLICT_SCENARIOS": {
+    "6-10": {
+      "question": "Maya is upset because Dev isn't drawing the pictures for the poster. What do you do?",
+      "choices": [
+        { "text": "Tell the teacher and get Dev in trouble.", "score": 10 },
+        { "text": "Have a friendly team meeting to ask Dev if he needs help drawing.", "score": 20 },
+        { "text": "Ignore them and do all the drawings yourself.", "score": 12 }
+      ]
+    },
+    "11-14": {
+      "question": "Dev is behind on his slides because he has a soccer match, and Chloe is frustrated about the delay. What do you do?",
+      "choices": [
+        { "text": "Demand Dev works late night to finish, or remove his name from the project.", "score": 10 },
+        { "text": "Hold a team call, reallocate some slides to Chloe and Maya, and adjust the timeline.", "score": 20 },
+        { "text": "Do Dev's work secretly so no one argues.", "score": 14 }
+      ]
+    },
+    "15-18": {
+      "question": "Maya wants to use quantitative data from an API, but Chloe thinks qualitative interviews are more convincing for the presentation. They are stuck in a deadlock.",
+      "choices": [
+        { "text": "Vote as a team to pick one method and completely discard the other.", "score": 12 },
+        { "text": "Synthesize both: use Maya's data for the charts, and Chloe's quotes as case study highlights.", "score": 20 },
+        { "text": "Let the team leader make the decision unilaterally without discussion.", "score": 14 }
+      ]
+    }
+  }
+}
