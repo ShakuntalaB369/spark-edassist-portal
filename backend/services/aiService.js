@@ -69,10 +69,7 @@ export const aiService = {
 const callGroq = async (prompt, systemInstruction, apiKey) => {
   try {
     console.log('[AI] Trying Groq...');
-    let groqModel = process.env.GROQ_MODEL || 'llama-3.1-8b-instant';
-    if (groqModel === 'llama-3.3-70b-versatile' || groqModel === 'qwen/qwen3.6-27b') {
-      groqModel = 'llama-3.1-8b-instant'; // Use reliable JSON-compatible model
-    }
+    let groqModel = 'qwen/qwen3.6-27b';
     const groq = new Groq({ apiKey });
 
     // Explicit Groq prompt guidelines to prevent json_validate_failed
@@ -97,13 +94,17 @@ Return valid JSON only. Do not include markdown codeblocks or conversational tex
         { role: 'system', content: groqSystemInstruction },
         { role: 'user', content: groqPrompt }
       ],
-      response_format: { type: 'json_object' },
+      // Remove response_format JSON mode constraint to prevent Groq schema check failures from Qwen's thinking tags
       temperature: 0.7,
     });
 
-    const content = response.choices[0]?.message?.content;
+    let content = response.choices[0]?.message?.content;
     if (content) {
-      console.log('[AI] Groq success');
+      console.log('[AI] Groq success. Raw length:', content.length);
+      // Clean up think tags if present
+      if (content.includes('<think>')) {
+        content = content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+      }
       return {
         provider: 'groq',
         content
