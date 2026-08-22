@@ -69,9 +69,9 @@ export const aiService = {
 const callGroq = async (prompt, systemInstruction, apiKey) => {
   try {
     console.log('[AI] Trying Groq...');
-    let groqModel = process.env.GROQ_MODEL || 'qwen/qwen3.6-27b';
-    if (groqModel === 'llama-3.3-70b-versatile') {
-      groqModel = 'qwen/qwen3.6-27b'; // Force redirect invalid model
+    let groqModel = process.env.GROQ_MODEL || 'llama-3.1-8b-instant';
+    if (groqModel === 'llama-3.3-70b-versatile' || groqModel === 'qwen/qwen3.6-27b') {
+      groqModel = 'llama-3.1-8b-instant'; // Use reliable JSON-compatible model
     }
     const groq = new Groq({ apiKey });
 
