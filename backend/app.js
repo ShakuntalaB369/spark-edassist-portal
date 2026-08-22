@@ -10,9 +10,48 @@ import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
 
+// --- CORS Configuration ---
+// Build the allowed origin list from environment and known dev URLs.
+// Set CLIENT_URL on Render to: https://spark-edassist-portal-ten.vercel.app
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+];
+
+// Support comma-separated CLIENT_URL env var (e.g. for multiple Vercel preview URLs)
+if (process.env.CLIENT_URL) {
+  process.env.CLIENT_URL.split(',').forEach((url) => {
+    const trimmed = url.trim();
+    if (trimmed && !allowedOrigins.includes(trimmed)) {
+      allowedOrigins.push(trimmed);
+    }
+  });
+}
+
+console.log('[CORS] Allowed origins:', allowedOrigins);
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow server-to-server requests (no Origin header) e.g. Render health checks
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    console.warn(`[CORS] Blocked request from origin: ${origin}`);
+    return callback(new Error(`CORS: Origin '${origin}' is not allowed`));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  optionsSuccessStatus: 204, // Some legacy browsers choke on 204
+};
+
 // Security Middlewares
 app.use(helmet());
-app.use(cors());
+app.use(cors(corsOptions));
+
+// Handle OPTIONS preflight for all routes explicitly
+app.options('*', cors(corsOptions));
 
 // Body parser
 app.use(express.json({ limit: '10mb' }));
