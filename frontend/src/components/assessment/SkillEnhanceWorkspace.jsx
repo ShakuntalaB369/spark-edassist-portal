@@ -15,7 +15,8 @@ import {
   Calendar, 
   TrendingUp, 
   ArrowUpRight,
-  Info
+  Info,
+  ShieldAlert
 } from 'lucide-react';
 import { QuestionCard } from './QuestionCard';
 import skillEnhanceService from '../../services/skillEnhanceService';
@@ -34,7 +35,8 @@ export const SkillEnhanceWorkspace = ({
   handleSelectAnswer,
   submitAnswer,
   nextQuestion,
-  onFinish
+  onFinish,
+  onManageConsent
 }) => {
   const [historyList, setHistoryList] = useState([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
@@ -363,22 +365,43 @@ export const SkillEnhanceWorkspace = ({
         </div>
 
         {/* SECTION 5: Personalized Recommendations */}
-        {report.recommendations && report.recommendations.length > 0 && (
-          <DashboardCard className="p-5 flex flex-col gap-4 border-l-4 border-l-purple-500">
-            <h3 className="font-bold text-[15px] text-purple-600 dark:text-purple-400 flex items-center gap-2">
-              <Sparkles size={16} />
-              <span>Recommended Next Steps</span>
+        {report.personalizationDeactivated ? (
+          <DashboardCard className="p-5 flex flex-col gap-4 border-l-4 border-l-amber-500 bg-amber-500/5">
+            <h3 className="font-bold text-[15px] text-amber-600 dark:text-amber-400 flex items-center gap-2">
+              <ShieldAlert size={16} />
+              <span>Personalization Disabled</span>
             </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {report.recommendations.map((rec, rIdx) => (
-                <div key={rIdx} className="bg-slate-200/40 dark:bg-white/[0.01] border border-slate-300 dark:border-panel-border p-4 rounded-xl">
-                  <div className="font-bold text-[14px] text-slate-900 dark:text-white">{rec.topic}</div>
-                  <div className="text-[11.5px] text-slate-400 dark:text-text-muted italic mt-0.5">Reason: {rec.reason}</div>
-                  <p className="text-[13px] text-slate-600 dark:text-text-secondary leading-relaxed mt-2">{rec.recommendation}</p>
-                </div>
-              ))}
-            </div>
+            <p className="text-[13.5px] text-slate-700 dark:text-slate-300 leading-relaxed font-semibold">
+              Personalized recommendations are unavailable because permission for personalized analysis is not currently active.
+            </p>
+            {onManageConsent && (
+              <Button
+                variant="pill"
+                onClick={onManageConsent}
+                className="w-fit text-[12px] py-1.5 px-3 rounded-full mt-1 border-amber-500/30 text-amber-500 hover:bg-amber-500/10"
+              >
+                Manage Consent
+              </Button>
+            )}
           </DashboardCard>
+        ) : (
+          report.recommendations && report.recommendations.length > 0 && (
+            <DashboardCard className="p-5 flex flex-col gap-4 border-l-4 border-l-purple-500">
+              <h3 className="font-bold text-[15px] text-purple-600 dark:text-purple-400 flex items-center gap-2">
+                <Sparkles size={16} />
+                <span>Recommended Next Steps</span>
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {report.recommendations.map((rec, rIdx) => (
+                  <div key={rIdx} className="bg-slate-200/40 dark:bg-white/[0.01] border border-slate-300 dark:border-panel-border p-4 rounded-xl">
+                    <div className="font-bold text-[14px] text-slate-900 dark:text-white">{rec.topic}</div>
+                    <div className="text-[11.5px] text-slate-400 dark:text-text-muted italic mt-0.5">Reason: {rec.reason}</div>
+                    <p className="text-[13px] text-slate-600 dark:text-text-secondary leading-relaxed mt-2">{rec.recommendation}</p>
+                  </div>
+                ))}
+              </div>
+            </DashboardCard>
+          )
         )}
 
         {/* SECTION 6: Assessment History & Progress */}

@@ -8,10 +8,12 @@ const Login = lazy(() => import('../pages/Login/Login'));
 const OTP = lazy(() => import('../pages/OTP/OTP'));
 const AssessmentConfig = lazy(() => import('../pages/Assessment/AssessmentConfig'));
 const Dashboard = lazy(() => import('../pages/Dashboard/Dashboard'));
+const TermsAndConditions = lazy(() => import('../pages/Terms/TermsAndConditions'));
+const PrivacyPolicy = lazy(() => import('../pages/Privacy/PrivacyPolicy'));
 
 const LAST_ROUTE_KEY = 'spark_last_route';
 // Routes that should never be saved as "last route" (public/auth routes)
-const PUBLIC_ROUTES = ['/', '/login', '/otp'];
+const PUBLIC_ROUTES = ['/', '/login', '/otp', '/terms', '/privacy'];
 
 /**
  * Tracks the current location and saves it to localStorage so that
@@ -91,6 +93,9 @@ export const AppRoutes = () => {
                 : <OTP />
             }
           />
+
+          <Route path="/terms" element={<TermsAndConditions />} />
+          <Route path="/privacy" element={<PrivacyPolicy />} />
 
           {/* Protected: requires OTP verification */}
           <Route

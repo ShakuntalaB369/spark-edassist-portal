@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/Button';
 import { DashboardCard } from '../dashboard/DashboardCard';
 import skillEnhanceService from '../../services/skillEnhanceService';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 export const SkillEnhanceHistory = ({ triggerToast, onSelectReport, refreshTrigger }) => {
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(false);
   const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [showAll, setShowAll] = useState(false);
 
   const fetchHistory = async () => {
     setLoading(true);
@@ -51,9 +53,16 @@ export const SkillEnhanceHistory = ({ triggerToast, onSelectReport, refreshTrigg
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="border-b border-panel-border pb-3">
-        <h3 className="text-[16px] font-bold text-slate-900 dark:text-white">✨ Skill Enhance History</h3>
-        <p className="text-[12px] text-slate-500">Track and review your previous multi-subject global challenges.</p>
+      <div className="border-b border-panel-border pb-3 flex items-center justify-between">
+        <div>
+          <h3 className="text-[16px] font-bold text-slate-900 dark:text-white">✨ Skill Enhance History</h3>
+          <p className="text-[12px] text-slate-500">Track and review your previous multi-subject global challenges.</p>
+        </div>
+        {history.length > 0 && (
+          <span className="text-[11px] text-slate-400 font-medium shrink-0">
+            {showAll ? history.length : Math.min(3, history.length)} of {history.length}
+          </span>
+        )}
       </div>
 
       {loading && history.length === 0 ? (
@@ -63,46 +72,66 @@ export const SkillEnhanceHistory = ({ triggerToast, onSelectReport, refreshTrigg
       ) : history.length === 0 ? (
         <p className="text-[13px] text-slate-500 py-4 text-center">No Skill Enhance sessions completed yet.</p>
       ) : (
-        <div className="flex flex-col gap-3">
-          {history.map((item) => (
-            <div key={item._id} className="flex justify-between items-center bg-slate-200/40 dark:bg-white/[0.02] p-4 rounded-xl border border-slate-300 dark:border-panel-border transition-colors">
-              <div className="flex flex-col gap-1">
-                <div className="font-bold text-[14px] text-slate-900 dark:text-white">
-                  Skill Enhance ({item.ageGroup})
+        <>
+          <div className="flex flex-col gap-3">
+            {[...history]
+              .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt))
+              .slice(0, showAll ? undefined : 3)
+              .map((item) => (
+                <div key={item._id} className="flex justify-between items-center bg-slate-200/40 dark:bg-white/[0.02] p-4 rounded-xl border border-slate-300 dark:border-panel-border transition-colors">
+                  <div className="flex flex-col gap-1">
+                    <div className="font-bold text-[14px] text-slate-900 dark:text-white">
+                      Skill Enhance ({item.ageGroup})
+                    </div>
+                    <div className="text-[11.5px] text-slate-500 dark:text-text-secondary">
+                      Completed {new Date(item.completedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <div className="text-right">
+                      <div className="font-extrabold text-[15px] text-slate-900 dark:text-white">{item.percentage}%</div>
+                      <div className="text-[11.5px] text-slate-500 dark:text-text-muted">{item.score} / {item.totalQuestions}</div>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button
+                        variant="modal"
+                        size="sm"
+                        onClick={() => onSelectReport(item)}
+                      >
+                        View Report
+                      </Button>
+                      <button
+                        onClick={() => handleDeleteClick(item._id)}
+                        title="Delete assessment"
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-rose-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 border border-transparent hover:border-rose-200 dark:hover:border-rose-500/20 transition-all duration-150 shrink-0"
+                      >
+                        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <polyline points="3 6 13 6"/>
+                          <path d="M5 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+                          <path d="M4 6l.8 7.2A1 1 0 005.8 14h4.4a1 1 0 00.996-.9L12 6"/>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
                 </div>
-                <div className="text-[11.5px] text-slate-500 dark:text-text-secondary">
-                  Completed {new Date(item.completedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-4">
-                <div className="text-right">
-                  <div className="font-extrabold text-[15px] text-slate-900 dark:text-white">{item.percentage}%</div>
-                  <div className="text-[11.5px] text-slate-500 dark:text-text-muted">{item.score} / {item.totalQuestions}</div>
-                </div>
-                
-                <div className="flex gap-2">
-                  <Button 
-                    variant="modal" 
-                    size="sm"
-                    onClick={() => onSelectReport(item)}
-                  >
-                    View Report
-                  </Button>
-                  
-                  <Button 
-                    variant="modal" 
-                    size="sm"
-                    onClick={() => handleDeleteClick(item._id)}
-                    className="!bg-rose-500/10 hover:!bg-rose-500/20 !text-rose-500 border border-rose-500/20 hover:border-rose-500/40 font-semibold"
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+              ))}
+          </div>
+
+          {history.length > 3 && (
+            <button
+              onClick={() => setShowAll(prev => !prev)}
+              className="self-center flex items-center gap-1.5 text-[11.5px] font-semibold text-slate-400 hover:text-[#1E3A8A] dark:hover:text-blue-400 transition-colors duration-150 py-1.5 px-3 rounded-lg hover:bg-slate-50 dark:hover:bg-white/5"
+            >
+              {showAll ? (
+                <><ChevronUp size={13} strokeWidth={2.2} /> Show Less</>
+              ) : (
+                <><ChevronDown size={13} strokeWidth={2.2} /> Show {history.length - 3} More</>
+              )}
+            </button>
+          )}
+        </>
       )}
 
       {/* Delete Confirmation Modal */}

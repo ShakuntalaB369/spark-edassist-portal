@@ -1,7 +1,7 @@
-import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.jsx'
+import { ErrorBoundary } from './components/ErrorBoundary.jsx'
 
 // Apply saved theme synchronously BEFORE React renders to avoid flash.
 // Default is 'light' — dark only activates if the user explicitly chose it.
@@ -13,7 +13,8 @@ if (savedTheme === 'dark') {
 }
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
+  <ErrorBoundary>
     <App />
-  </StrictMode>,
+  </ErrorBoundary>,
 )
+

@@ -5,6 +5,7 @@ import questionRoutes from './routes/questionRoutes.js';
 import assessmentRoutes from './routes/assessmentRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import skillEnhanceRoutes from './routes/skillEnhanceRoutes.js';
+import consentRoutes from './routes/consentRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
@@ -22,6 +23,7 @@ app.use('/api/questions', questionRoutes);
 app.use('/api/assessments', assessmentRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/skill-enhance', skillEnhanceRoutes);
+app.use('/api/consent', consentRoutes);
 
 // Catch-all route not found
 app.use((req, res, next) => {

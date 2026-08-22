@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAssessmentContext } from '../../context/AssessmentContext';
 import { authService } from '../../services/authService';
 import { Shield, Globe, BookOpen } from 'lucide-react';
@@ -18,8 +18,15 @@ export const Login = () => {
   } = useAssessmentContext();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [termsError, setTermsError] = useState(false);
 
   const handleGoogleLogin = () => {
+    if (!termsAccepted) {
+      setTermsError(true);
+      return;
+    }
+    setTermsError(false);
     if (!window.google) {
       triggerToast("Google Sign-In is loading, please try again in a moment.", "error");
       return;
@@ -297,12 +304,60 @@ export const Login = () => {
             <span>{loading ? 'Connecting...' : 'Continue with Google'}</span>
           </button>
 
+          {/* Legal consent checkbox */}
+          <div className="mt-7 flex flex-col gap-2">
+            <label className="flex items-start gap-2.5 cursor-pointer group select-none">
+              <div className="relative mt-0.5 shrink-0">
+                <input
+                  type="checkbox"
+                  id="terms-consent"
+                  checked={termsAccepted}
+                  onChange={(e) => {
+                    setTermsAccepted(e.target.checked);
+                    if (e.target.checked) setTermsError(false);
+                  }}
+                  className="sr-only peer"
+                />
+                <div className={`w-4 h-4 rounded border transition-all duration-150 flex items-center justify-center
+                  ${
+                    termsAccepted
+                      ? 'bg-[#1E3A8A] border-[#1E3A8A]'
+                      : termsError
+                        ? 'bg-white border-rose-400'
+                        : 'bg-white border-slate-300 group-hover:border-slate-400'
+                  }`}
+                >
+                  {termsAccepted && (
+                    <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 12 12" fill="none">
+                      <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </div>
+              </div>
+              <span className="text-[12px] leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                I agree to the{' '}
+                <Link to="/terms" className="font-semibold hover:underline transition-colors" style={{ color: 'var(--text-primary)' }}>Terms &amp; Conditions</Link>
+                {' '}and{' '}
+                <Link to="/privacy" className="font-semibold hover:underline transition-colors" style={{ color: 'var(--text-primary)' }}>Privacy Policy</Link>
+              </span>
+            </label>
+
+            {termsError && (
+              <p className="text-[11.5px] text-rose-500 font-medium flex items-center gap-1.5 pl-6">
+                <svg className="w-3 h-3 shrink-0" viewBox="0 0 16 16" fill="currentColor">
+                  <path d="M8 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1zm0 3.5a.75.75 0 0 1 .75.75v3.5a.75.75 0 0 1-1.5 0v-3.5A.75.75 0 0 1 8 4.5zm0 7a.875.875 0 1 1 0-1.75.875.875 0 0 1 0 1.75z" />
+                </svg>
+                Please accept the Terms &amp; Conditions and Privacy Policy to continue.
+              </p>
+            )}
+          </div>
+
           {/* Footer links */}
-          <div className="mt-10 pt-6 flex gap-5 text-[11.5px]"
+          <div className="mt-5 pt-5 flex gap-5 text-[11.5px]"
             style={{ borderTop: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
-            <a href="#terms" className="hover:underline transition-colors">Terms &amp; Conditions</a>
+            <Link to="/terms" className="hover:underline transition-colors">Terms &amp; Conditions</Link>
             <span>·</span>
-            <a href="#privacy" className="hover:underline transition-colors">Privacy Notice</a>
+            <Link to="/privacy" className="hover:underline transition-colors">Privacy Policy</Link>
             <span>·</span>
             <a href="#support" className="hover:underline transition-colors">Support</a>
           </div>

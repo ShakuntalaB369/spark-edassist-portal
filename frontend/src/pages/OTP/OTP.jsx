@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Shield, Loader2, CheckCircle2 } from 'lucide-react';
 import { useAssessmentContext } from '../../context/AssessmentContext';
 import { Button } from '../../components/ui/Button';
@@ -331,9 +331,9 @@ export const OTP = () => {
             className="mt-10 pt-6 flex gap-5 text-[11.5px]"
             style={{ borderTop: '1px solid var(--border)', color: 'var(--text-secondary)' }}
           >
-            <a href="#terms" className="hover:underline transition-colors">Terms &amp; Conditions</a>
+            <Link to="/terms" className="hover:underline transition-colors">Terms &amp; Conditions</Link>
             <span>·</span>
-            <a href="#privacy" className="hover:underline transition-colors">Privacy Notice</a>
+            <Link to="/privacy" className="hover:underline transition-colors">Privacy Policy</Link>
             <span>·</span>
             <a href="#support" className="hover:underline transition-colors">Support</a>
           </div>

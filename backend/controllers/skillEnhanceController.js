@@ -1,6 +1,7 @@
 import { skillEnhanceService } from '../services/skillEnhanceService.js';
 import { SkillEnhance } from '../models/SkillEnhance.js';
 import { aiReportService } from '../services/aiReportService.js';
+import { Consent } from '../models/Consent.js';
 
 export const generateSkillEnhance = async (req, res, next) => {
   try {
@@ -27,6 +28,11 @@ export const generateSkillEnhance = async (req, res, next) => {
 export const completeSkillEnhance = async (req, res, next) => {
   try {
     const userId = req.user._id;
+
+    // Evaluate consent status for personalization
+    const consent = await Consent.findOne({ userId, purpose: 'skill_enhancement_personalization' }).sort({ createdAt: -1 });
+    const hasConsent = consent && consent.status === 'granted' && !(consent.expiryDate && new Date() > new Date(consent.expiryDate));
+
     const ageGroup = req.user.ageGroup || '15-18';
     const { questions, answers, timeTaken = 0 } = req.body;
 
@@ -155,29 +161,38 @@ export const completeSkillEnhance = async (req, res, next) => {
       summary: `You scored ${correctCount}/${totalQuestions} on the Skill Enhance Assessment.`
     };
 
-    try {
-      const generatedReport = await aiReportService.generateReportAnalysis({
-        configuration: {
-          subject: 'Multi-Subject Skill Enhance',
-          ageGroup,
-          globalContext: 'Multiple Countries',
-          category: 'Skill Enhance'
-        },
-        score: correctCount,
-        totalQuestions,
-        percentage,
-        performanceLevel,
-        bloomStats,
-        categoryStats,
-        difficultyStats,
-        detailsList
-      });
+    if (hasConsent) {
+      try {
+        const generatedReport = await aiReportService.generateReportAnalysis({
+          configuration: {
+            subject: 'Multi-Subject Skill Enhance',
+            ageGroup,
+            globalContext: 'Multiple Countries',
+            category: 'Skill Enhance'
+          },
+          score: correctCount,
+          totalQuestions,
+          percentage,
+          performanceLevel,
+          bloomStats,
+          categoryStats,
+          difficultyStats,
+          detailsList
+        });
 
-      if (generatedReport) {
-        reportAnalysis = generatedReport;
+        if (generatedReport) {
+          reportAnalysis = generatedReport;
+        }
+      } catch (aiErr) {
+        console.warn('AI Report service unavailable for Skill Enhance, using fallback analysis:', aiErr);
       }
-    } catch (aiErr) {
-      console.warn('AI Report service unavailable for Skill Enhance, using fallback analysis:', aiErr);
+    } else {
+      // Personalization deactivated: bypass AI analysis and clear custom recommendations
+      reportAnalysis.personalizationDeactivated = true;
+      reportAnalysis.strengths = ['Personalized insights are unavailable.'];
+      reportAnalysis.weakAreas = ['Personalized areas to improve are unavailable.'];
+      reportAnalysis.recommendations = [];
+      reportAnalysis.suggestedTopics = [];
     }
 
     // Ensure math consistency

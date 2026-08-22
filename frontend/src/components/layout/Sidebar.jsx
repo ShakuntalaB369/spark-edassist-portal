@@ -5,7 +5,7 @@ import { DashboardCard } from '../dashboard/DashboardCard';
 import { MasteryCard } from '../dashboard/MasteryCard';
 import { ProgressCard } from '../dashboard/ProgressCard';
 import questionsData from '../../data/questions.json';
-import { Target, Pencil } from 'lucide-react';
+import { Target, Pencil, ShieldCheck } from 'lucide-react';
 
 const renderFlagImage = (code, className = "w-5 h-3.5 object-cover rounded-sm shadow-sm inline-block") => {
   if (!code) return null;
@@ -23,7 +23,7 @@ const renderFlagImage = (code, className = "w-5 h-3.5 object-cover rounded-sm sh
   );
 };
 
-export const Sidebar = ({ onEditProfile }) => {
+export const Sidebar = ({ onEditProfile, onPrivacyClick }) => {
   const {
     userName,
     ageGroup,
@@ -73,13 +73,40 @@ export const Sidebar = ({ onEditProfile }) => {
             )}
           </div>
         </div>
-        <button
-          onClick={onEditProfile}
-          className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5 transition-all duration-150 cursor-pointer shrink-0"
-          title="Edit Profile"
-        >
-          <Pencil size={14} />
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Edit Profile icon */}
+          <button
+            onClick={onEditProfile}
+            title="Edit Profile"
+            className="w-8 h-8 rounded-xl flex items-center justify-center
+              bg-blue-50 dark:bg-blue-500/10
+              border border-blue-100 dark:border-blue-500/20
+              text-[#1E3A8A] dark:text-blue-400
+              hover:bg-blue-100 dark:hover:bg-blue-500/20
+              hover:border-blue-200 dark:hover:border-blue-400/30
+              hover:shadow-sm
+              transition-all duration-150 cursor-pointer shrink-0"
+          >
+            <Pencil size={15} strokeWidth={2} />
+          </button>
+
+          {/* Privacy & Consent icon */}
+          <button
+            onClick={onPrivacyClick}
+            title="Privacy & Consent Settings"
+            className="w-8 h-8 rounded-xl flex items-center justify-center
+              bg-indigo-50 dark:bg-indigo-500/10
+              border border-indigo-100 dark:border-indigo-500/20
+              text-indigo-700 dark:text-indigo-400
+              hover:bg-indigo-100 dark:hover:bg-indigo-500/20
+              hover:border-indigo-200 dark:hover:border-indigo-400/30
+              hover:shadow-sm
+              transition-all duration-150 cursor-pointer shrink-0"
+          >
+            <ShieldCheck size={15} strokeWidth={2} />
+          </button>
+        </div>
+
       </DashboardCard>
 
       {/* Mastery Framework Card */}

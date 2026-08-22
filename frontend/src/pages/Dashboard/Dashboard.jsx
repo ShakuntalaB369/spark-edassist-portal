@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { BookOpen, Cpu, Users, PenTool } from 'lucide-react';
+import { BookOpen, Cpu, Users, PenTool, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAssessmentContext } from '../../context/AssessmentContext';
 import { useProgress } from '../../hooks/useProgress';
 import { Header } from '../../components/layout/Header';
@@ -20,9 +20,15 @@ import { SkillEnhanceWorkspace } from '../../components/assessment/SkillEnhanceW
 import { SkillEnhanceHistory } from '../../components/assessment/SkillEnhanceHistory';
 import { SkillEnhanceConfig } from '../../components/assessment/SkillEnhanceConfig';
 import { SkillEnhanceOverview } from '../../components/assessment/SkillEnhanceOverview';
+import { QuickAssessmentParams } from '../../components/assessment/QuickAssessmentParams';
 import { CountrySelect } from '../../components/assessment/CountrySelect';
 import { useSkillEnhance } from '../../hooks/useSkillEnhance';
 import confetti from 'canvas-confetti';
+import { consentService } from '../../services/consentService';
+import { ConsentModal } from '../../components/common/ConsentModal';
+import { PrivacySettings } from '../../components/common/PrivacySettings';
+import { validateConsentContext } from '../../utils/consentValidation';
+import { ConsentConflictWarning } from '../../components/common/ConsentConflictWarning';
 
 const SVGLineChart = ({ data }) => {
   if (!data || data.length === 0) return null;
@@ -96,6 +102,7 @@ const SVGLineChart = ({ data }) => {
 };
 
 const CategoryAnalysisDashboard = ({ category, history, onBack, handleViewReport, loadingReportId, onDeleteClick }) => {
+  const [showAllCatHistory, setShowAllCatHistory] = useState(false);
   const catItems = history.filter(item => item.configuration?.category === category);
   
   if (catItems.length === 0) {
@@ -319,48 +326,71 @@ const CategoryAnalysisDashboard = ({ category, history, onBack, handleViewReport
 
       {/* CATEGORY HISTORY */}
       <div className="bg-white dark:bg-white/[0.02] border border-slate-200 dark:border-panel-border p-5 rounded-2xl flex flex-col gap-3">
-        <h4 className="text-[12.8px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{category} Assessment History</h4>
-        <div className="flex flex-col gap-3">
-          {catItems.map((item) => (
-            <div key={item._id} className="flex justify-between items-center bg-slate-200/40 dark:bg-white/[0.02] p-4 rounded-xl border border-slate-300 dark:border-panel-border transition-colors">
-              <div className="flex flex-col gap-1">
-                <div className="font-bold text-[14px] text-slate-900 dark:text-white">
-                  {item.configuration?.subject} ({item.configuration?.difficulty})
-                </div>
-                <div className="text-[11.5px] text-slate-500 dark:text-text-secondary">
-                  Completed {new Date(item.completedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-4">
-                <div className="text-right">
-                  <div className="font-extrabold text-[15px] text-slate-900 dark:text-white">{item.percentage}%</div>
-                  <div className="text-[11.5px] text-slate-500 dark:text-text-muted">{item.score} / {item.totalQuestions}</div>
-                </div>
-                
-                <div className="flex gap-2">
-                  <Button 
-                    variant="modal" 
-                    size="sm"
-                    disabled={loadingReportId === item._id}
-                    onClick={() => handleViewReport(item._id)}
-                  >
-                    {loadingReportId === item._id ? 'Loading...' : 'View Report'}
-                  </Button>
-                  
-                  <Button 
-                    variant="modal" 
-                    size="sm"
-                    onClick={() => onDeleteClick(item._id)}
-                    className="!bg-rose-500/10 hover:!bg-rose-500/20 !text-rose-500 border border-rose-500/20 hover:border-rose-500/40 font-semibold"
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </div>
-            </div>
-          ))}
+        <div className="flex items-center justify-between">
+          <h4 className="text-[12.8px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{category} Assessment History</h4>
+          <span className="text-[11px] text-slate-400 font-medium">
+            {showAllCatHistory ? catItems.length : Math.min(5, catItems.length)} of {catItems.length}
+          </span>
         </div>
+        <div className="flex flex-col gap-3">
+          {[...catItems]
+            .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt))
+            .slice(0, showAllCatHistory ? undefined : 5)
+            .map((item) => (
+              <div key={item._id} className="flex justify-between items-center bg-slate-200/40 dark:bg-white/[0.02] p-4 rounded-xl border border-slate-300 dark:border-panel-border transition-colors">
+                <div className="flex flex-col gap-1">
+                  <div className="font-bold text-[14px] text-slate-900 dark:text-white">
+                    {item.configuration?.subject} ({item.configuration?.difficulty})
+                  </div>
+                  <div className="text-[11.5px] text-slate-500 dark:text-text-secondary">
+                    Completed {new Date(item.completedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <div className={`font-extrabold text-[15px] tabular-nums ${item.percentage >= 70 ? 'text-emerald-600 dark:text-emerald-400' : item.percentage >= 50 ? 'text-blue-600 dark:text-blue-400' : 'text-rose-500'}`}>{item.percentage}%</div>
+                    <div className="text-[11.5px] text-slate-500 dark:text-text-muted">{item.score} / {item.totalQuestions}</div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="modal"
+                      size="sm"
+                      disabled={loadingReportId === item._id}
+                      onClick={() => handleViewReport(item._id)}
+                    >
+                      {loadingReportId === item._id ? 'Loading...' : 'View Report'}
+                    </Button>
+                    <button
+                      onClick={() => onDeleteClick(item._id)}
+                      title="Delete assessment"
+                      className="w-7 h-7 rounded-lg flex items-center justify-center text-rose-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 border border-transparent hover:border-rose-200 dark:hover:border-rose-500/20 transition-all duration-150 shrink-0"
+                    >
+                      <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="3 6 13 6"/>
+                        <path d="M5 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+                        <path d="M4 6l.8 7.2A1 1 0 005.8 14h4.4a1 1 0 00.996-.9L12 6"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+        </div>
+
+        {catItems.length > 5 && (
+          <button
+            onClick={() => setShowAllCatHistory(prev => !prev)}
+            className="self-center flex items-center gap-1.5 text-[11.5px] font-semibold text-slate-400 hover:text-[#1E3A8A] dark:hover:text-blue-400 transition-colors duration-150 py-1.5 px-3 rounded-lg hover:bg-slate-50 dark:hover:bg-white/5"
+          >
+            {showAllCatHistory ? (
+              <><ChevronUp size={13} strokeWidth={2.2} /> Show Less</>
+            ) : (
+              <><ChevronDown size={13} strokeWidth={2.2} /> Show {catItems.length - 5} More</>
+            )}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -401,6 +431,103 @@ export const Dashboard = () => {
   const [activeWorkspaceMode, setActiveWorkspaceMode] = useState(null); // null | 'normal' | 'skill-enhance'
   const [skillHistoryRefresh, setSkillHistoryRefresh] = useState(0);
   const [skillEnhanceConfig, setSkillEnhanceConfig] = useState({ ageGroup: ageGroup || '15–18', difficulty: 'Medium' });
+
+  // Consent collection state and actions
+  const [consentStatus, setConsentStatus] = useState(null); // null | 'granted' | 'declined'
+  const [isConsentModalOpen, setIsConsentModalOpen] = useState(false);
+  const [consentConflict, setConsentConflict] = useState(null); // null | { status, message }
+
+  useEffect(() => {
+    const fetchConsent = async () => {
+      try {
+        const res = await consentService.getConsentStatus('skill_enhancement_personalization');
+        if (res?.success && res.data) {
+          setConsentStatus(res.data.status);
+        }
+      } catch (err) {
+        console.error("Failed to check consent status:", err);
+      }
+    };
+    fetchConsent();
+  }, []);
+
+  const handleStartSkillEnhanceClick = () => {
+    const validation = validateConsentContext(
+      consentStatus ? { status: consentStatus, isExpired: consentStatus === 'expired', purpose: 'skill_enhancement_personalization' } : null,
+      'skill_enhancement_personalization'
+    );
+
+    if (validation.isAllowed) {
+      setActiveWorkspaceMode('skill-enhance-overview');
+    } else {
+      setConsentConflict({
+        status: validation.status,
+        message: validation.message
+      });
+      setActiveWorkspaceMode('skill-enhance-conflict');
+    }
+  };
+
+  const handleConsentAllow = async () => {
+    try {
+      const res = await consentService.recordConsent('skill_enhancement_personalization', 'granted');
+      if (res?.success) {
+        setConsentStatus('granted');
+        setIsConsentModalOpen(false);
+        triggerToast("Personalization consent granted!");
+        if (activeWorkspaceMode !== 'privacy') {
+          setActiveWorkspaceMode('skill-enhance-overview');
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      triggerToast("Failed to save consent decision.", "error");
+    }
+  };
+
+  const handleConsentDecline = async () => {
+    try {
+      const res = await consentService.recordConsent('skill_enhancement_personalization', 'declined');
+      if (res?.success) {
+        setConsentStatus('declined');
+        setIsConsentModalOpen(false);
+        triggerToast("Consent declined. Personalization is required for Skill Enhance.", "info");
+      }
+    } catch (err) {
+      console.error(err);
+      triggerToast("Failed to save consent decision.", "error");
+    }
+  };
+
+  const handleToggleConsent = async () => {
+    const targetStatus = consentStatus === 'granted' ? 'declined' : 'granted';
+    try {
+      const res = await consentService.recordConsent('skill_enhancement_personalization', targetStatus);
+      if (res?.success) {
+        setConsentStatus(targetStatus);
+        if (targetStatus === 'granted') {
+          triggerToast("Personalization consent granted! You can now use Skill Enhance.");
+        } else {
+          triggerToast("Personalization consent withdrawn.", "info");
+          if (activeWorkspaceMode && activeWorkspaceMode.startsWith('skill-enhance')) {
+            setActiveWorkspaceMode(null);
+            skillEnhance.resetSession();
+          }
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      triggerToast("Failed to update consent decision.", "error");
+    }
+  };
+
+  const handleManageConsentClick = () => {
+    if (consentStatus === 'expired') {
+      setIsConsentModalOpen(true);
+    } else {
+      handleToggleConsent();
+    }
+  };
 
   useEffect(() => {
     if (ageGroup) {
@@ -519,6 +646,7 @@ export const Dashboard = () => {
   const [selectedHistoryTab, setSelectedHistoryTab] = useState(null);
   const [deleteTargetId, setDeleteTargetId] = useState(null);
   const [deleting, setDeleting] = useState(false);
+  const [showAllAssessmentHistory, setShowAllAssessmentHistory] = useState(false);
 
   const { totalMasteryScore, anxietyIndex, rippleNodes } = useProgress({
     foundationalScore,
@@ -618,7 +746,7 @@ export const Dashboard = () => {
   return (
     <div className="w-full min-h-screen flex flex-col font-body bg-[#F5F7FA] dark:bg-[#080B12] text-slate-900 dark:text-slate-100 transition-colors duration-300">
       {toastMessage && (
-        <div className="fixed inset-0 bg-transparent pointer-events-none z-[1100] flex items-start justify-center pt-6 px-6">
+        <div className="fixed inset-0 bg-transparent pointer-events-none z-[99999] flex items-start justify-center pt-20 px-6">
           <div className="bg-white dark:bg-[#101522] border border-slate-200 dark:border-[#1e293b] shadow-lg px-5 py-3 rounded-xl max-w-[400px] flex items-center gap-3 pointer-events-auto animate-slide-up">
             <div className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
             <p className="text-[13.5px] font-semibold text-slate-800 dark:text-white">{toastMessage}</p>
@@ -629,7 +757,10 @@ export const Dashboard = () => {
       <Header />
 
       <main className="max-w-[1400px] w-full mx-auto p-4 md:p-8 grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-5 md:gap-7 grow">
-        <Sidebar onEditProfile={handleOpenEditProfile} />
+        <Sidebar 
+          onEditProfile={handleOpenEditProfile} 
+          onPrivacyClick={() => setActiveWorkspaceMode('privacy')} 
+        />
 
         <div className="flex flex-col gap-6 w-full">
           {(() => {
@@ -675,6 +806,30 @@ export const Dashboard = () => {
             <DashboardCard className="min-h-[380px]">
               <FoundationalTab />
             </DashboardCard>
+          ) : activeWorkspaceMode === 'privacy' ? (
+            <DashboardCard className="min-h-[380px]">
+              <div className="flex justify-between items-center mb-4">
+                <Button variant="pill" onClick={() => setActiveWorkspaceMode(null)}>← Back to Entry Options</Button>
+              </div>
+              <PrivacySettings 
+                triggerToast={triggerToast}
+                onTriggerConsentModal={() => setIsConsentModalOpen(true)}
+                consentStatus={consentStatus}
+                setConsentStatus={setConsentStatus}
+              />
+            </DashboardCard>
+          ) : activeWorkspaceMode === 'skill-enhance-conflict' ? (
+            <DashboardCard className="min-h-[380px]">
+              <ConsentConflictWarning 
+                status={consentConflict?.status}
+                message={consentConflict?.message}
+                onReviewConsent={() => setIsConsentModalOpen(true)}
+                onContinueWithoutPersonalization={() => {
+                  setActiveWorkspaceMode('skill-enhance-overview');
+                }}
+                onBack={() => setActiveWorkspaceMode(null)}
+              />
+            </DashboardCard>
           ) : activeWorkspaceMode === 'skill-enhance' ? (
             <DashboardCard className="min-h-[380px]">
               <SkillEnhanceWorkspace 
@@ -683,6 +838,10 @@ export const Dashboard = () => {
                   skillEnhance.resetSession();
                   setActiveWorkspaceMode(null);
                   setSkillHistoryRefresh(prev => prev + 1);
+                }}
+                onManageConsent={() => {
+                  skillEnhance.resetSession();
+                  setActiveWorkspaceMode('privacy');
                 }}
               />
             </DashboardCard>
@@ -707,6 +866,22 @@ export const Dashboard = () => {
                   skillEnhance.startSkillEnhance(config.ageGroup, config.difficulty);
                 }}
                 onBack={() => setActiveWorkspaceMode(null)}
+                onSelectReport={(report) => setSelectedHistoryReport(report)}
+                consentStatus={consentStatus}
+                onManageConsent={() => setActiveWorkspaceMode('privacy')}
+                onShowParams={() => setActiveWorkspaceMode('skill-enhance-params')}
+              />
+            </DashboardCard>
+          ) : activeWorkspaceMode === 'skill-enhance-params' ? (
+            <DashboardCard className="min-h-[380px]">
+              <QuickAssessmentParams
+                initialConfig={skillEnhanceConfig}
+                onStart={(config) => {
+                  setSkillEnhanceConfig(config);
+                  setActiveWorkspaceMode('skill-enhance');
+                  skillEnhance.startSkillEnhance(config.ageGroup, config.difficulty);
+                }}
+                onBack={() => setActiveWorkspaceMode('skill-enhance-overview')}
               />
             </DashboardCard>
           ) : activeWorkspaceMode === 'skill-enhance-config' ? (
@@ -764,10 +939,28 @@ export const Dashboard = () => {
                       </p>
                     </div>
                   </div>
-                  <div className="mt-5">
-                    <Button variant="pill-primary" className="w-fit" onClick={() => setActiveWorkspaceMode('skill-enhance-overview')}>
+                  <div className="mt-5 flex items-center justify-between">
+                    <Button variant="pill-primary" className="w-fit" onClick={handleStartSkillEnhanceClick}>
                       Start Skill Enhance →
                     </Button>
+                    {consentStatus && (() => {
+                        const isGranted  = consentStatus === 'granted';
+                        const isExpired  = consentStatus === 'expired';
+                        const label      = isGranted ? 'Withdraw Personalization'
+                                         : isExpired ? 'Review Personalization'
+                                         : 'Enable Personalization';
+                        const base = "inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-[11.5px] font-semibold border transition-all duration-150 cursor-pointer";
+                        const style = isGranted
+                          ? `${base} text-amber-700 border-amber-300 bg-amber-50 hover:bg-amber-100 hover:border-amber-400 dark:text-amber-400 dark:border-amber-500/40 dark:bg-amber-500/10 dark:hover:bg-amber-500/20`
+                          : `${base} text-blue-700 border-blue-300 bg-blue-50 hover:bg-blue-100 hover:border-blue-400 dark:text-blue-400 dark:border-blue-500/40 dark:bg-blue-500/10 dark:hover:bg-blue-500/20`;
+                        return (
+                          <button onClick={handleManageConsentClick} className={style}>
+                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${isGranted ? 'bg-amber-500' : 'bg-blue-500'}`} />
+                            {label}
+                          </button>
+                        );
+                      })()
+                    }
                   </div>
                 </DashboardCard>
               </div>
@@ -776,6 +969,11 @@ export const Dashboard = () => {
               <DashboardCard className="flex flex-col gap-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.1em]">Assessment History</h3>
+                  {history.length > 0 && (
+                    <span className="text-[11px] text-slate-400 font-medium">
+                      {showAllAssessmentHistory ? history.length : Math.min(5, history.length)} of {history.length}
+                    </span>
+                  )}
                 </div>
 
                 {historyLoading ? (
@@ -792,62 +990,96 @@ export const Dashboard = () => {
                       <p className="text-[12px] text-slate-400 dark:text-slate-500 mt-0.5">Complete your first assessment to see your history.</p>
                     </div>
                   </div>
-                ) : (
-                  <div className="flex flex-col gap-5">
-                    {['Foundational', 'Applied', 'Collaborative', 'Reflective'].map((catName) => {
-                      const catItems = history.filter(item => item.configuration?.category === catName);
-                      if (catItems.length === 0) return null;
-                      const catColors = {
-                        Foundational: 'text-[#1E3A8A] dark:text-blue-400',
-                        Applied: 'text-emerald-700 dark:text-emerald-400',
-                        Collaborative: 'text-indigo-700 dark:text-indigo-400',
-                        Reflective: 'text-amber-700 dark:text-amber-500'
-                      };
-                      return (
-                        <div key={catName} className="flex flex-col gap-1 text-left">
-                          <div className={`text-[10.5px] font-bold uppercase tracking-[0.1em] pb-2 border-b border-slate-100 dark:border-[#1e293b] mb-1 ${catColors[catName]}`}>
-                            {catName}
-                          </div>
-                          <div className="flex flex-col divide-y divide-slate-100 dark:divide-[#1e293b]">
-                            {catItems.map((item) => (
-                              <div key={item._id} className="flex justify-between items-center py-3 hover:bg-slate-50 dark:hover:bg-white/[0.015] px-1 rounded-lg transition-colors duration-100">
-                                <div className="flex flex-col gap-0.5 text-left">
-                                  <div className="font-semibold text-[13.5px] text-slate-900 dark:text-white">
-                                    {item.configuration?.subject}
-                                    <span className="text-[11px] text-slate-400 dark:text-slate-500 font-normal ml-1.5">({item.configuration?.difficulty})</span>
-                                  </div>
-                                  <div className="text-[11px] text-slate-400 dark:text-slate-500">
-                                    {new Date(item.completedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                                  </div>
-                                </div>
-
-                                <div className="flex items-center gap-4">
-                                  <div className="text-right">
-                                    <div className={`font-bold text-[15px] tabular-nums ${item.percentage >= 70 ? 'text-emerald-600 dark:text-emerald-400' : item.percentage >= 50 ? 'text-blue-600 dark:text-blue-400' : 'text-rose-500'}`}>
-                                      {item.percentage}%
+                ) : (() => {
+                  // Flatten all items sorted newest→oldest, then apply limit
+                  const sorted = [...history].sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
+                  const visible = showAllAssessmentHistory ? sorted : sorted.slice(0, 5);
+                  // Re-group visible items by category
+                  const catColors = {
+                    Foundational: 'text-[#1E3A8A] dark:text-blue-400',
+                    Applied: 'text-emerald-700 dark:text-emerald-400',
+                    Collaborative: 'text-indigo-700 dark:text-indigo-400',
+                    Reflective: 'text-amber-700 dark:text-amber-500'
+                  };
+                  const grouped = {};
+                  visible.forEach(item => {
+                    const cat = item.configuration?.category || 'Other';
+                    if (!grouped[cat]) grouped[cat] = [];
+                    grouped[cat].push(item);
+                  });
+                  return (
+                    <>
+                      <div className="flex flex-col gap-5">
+                        {Object.entries(grouped).map(([catName, catItems]) => (
+                          <div key={catName} className="flex flex-col gap-1 text-left">
+                            <div className={`text-[10.5px] font-bold uppercase tracking-[0.1em] pb-2 border-b border-slate-100 dark:border-[#1e293b] mb-1 ${catColors[catName] || 'text-slate-500'}`}>
+                              {catName}
+                            </div>
+                            <div className="flex flex-col divide-y divide-slate-100 dark:divide-[#1e293b]">
+                              {catItems.map((item) => (
+                                <div key={item._id} className="flex justify-between items-center py-3 hover:bg-slate-50 dark:hover:bg-white/[0.015] px-1 rounded-lg transition-colors duration-100">
+                                  <div className="flex flex-col gap-0.5 text-left">
+                                    <div className="font-semibold text-[13.5px] text-slate-900 dark:text-white">
+                                      {item.configuration?.subject}
+                                      <span className="text-[11px] text-slate-400 dark:text-slate-500 font-normal ml-1.5">({item.configuration?.difficulty})</span>
                                     </div>
                                     <div className="text-[11px] text-slate-400 dark:text-slate-500">
-                                      {item.score} / {item.totalQuestions}
+                                      {new Date(item.completedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                                     </div>
                                   </div>
-
-                                  <Button
-                                    variant="modal"
-                                    size="sm"
-                                    disabled={loadingReportId === item._id}
-                                    onClick={() => handleViewReport(item._id)}
-                                  >
-                                    {loadingReportId === item._id ? 'Loading...' : 'View Report'}
-                                  </Button>
+                                  <div className="flex items-center gap-4">
+                                    <div className="text-right">
+                                      <div className={`font-bold text-[15px] tabular-nums ${item.percentage >= 70 ? 'text-emerald-600 dark:text-emerald-400' : item.percentage >= 50 ? 'text-blue-600 dark:text-blue-400' : 'text-rose-500'}`}>
+                                        {item.percentage}%
+                                      </div>
+                                      <div className="text-[11px] text-slate-400 dark:text-slate-500">
+                                        {item.score} / {item.totalQuestions}
+                                      </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <Button
+                                        variant="modal"
+                                        size="sm"
+                                        disabled={loadingReportId === item._id}
+                                        onClick={() => handleViewReport(item._id)}
+                                      >
+                                        {loadingReportId === item._id ? 'Loading...' : 'View Report'}
+                                      </Button>
+                                      <button
+                                        onClick={() => setDeleteTargetId(item._id)}
+                                        title="Delete assessment"
+                                        className="w-7 h-7 rounded-lg flex items-center justify-center text-rose-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-500/10 border border-transparent hover:border-rose-200 dark:hover:border-rose-500/20 transition-all duration-150 shrink-0"
+                                      >
+                                        <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                          <polyline points="3 6 13 6"/>
+                                          <path d="M5 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+                                          <path d="M4 6l.8 7.2A1 1 0 005.8 14h4.4a1 1 0 00.996-.9L12 6"/>
+                                        </svg>
+                                      </button>
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                        ))}
+                      </div>
+
+                      {history.length > 5 && (
+                        <button
+                          onClick={() => setShowAllAssessmentHistory(prev => !prev)}
+                          className="self-center flex items-center gap-1.5 text-[11.5px] font-semibold text-slate-400 hover:text-[#1E3A8A] dark:hover:text-blue-400 transition-colors duration-150 py-1.5 px-3 rounded-lg hover:bg-slate-50 dark:hover:bg-white/5"
+                        >
+                          {showAllAssessmentHistory ? (
+                            <><ChevronUp size={13} strokeWidth={2.2} /> Show Less</>
+                          ) : (
+                            <><ChevronDown size={13} strokeWidth={2.2} /> Show {history.length - 5} More</>
+                          )}
+                        </button>
+                      )}
+                    </>
+                  );
+                })()}
               </DashboardCard>
 
               {/* Skill Enhance History Section */}
@@ -929,6 +1161,10 @@ export const Dashboard = () => {
                   sessionComplete={true}
                   sessionResult={selectedHistoryReport}
                   onFinish={() => setSelectedHistoryReport(null)}
+                  onManageConsent={() => {
+                    setSelectedHistoryReport(null);
+                    setActiveWorkspaceMode('privacy');
+                  }}
                 />
               ) : (
                 <div className="text-left flex flex-col gap-6">
@@ -1299,6 +1535,14 @@ export const Dashboard = () => {
           </form>
         </div>
       )}
+
+      {/* Consent collection Modal */}
+      <ConsentModal
+        isOpen={isConsentModalOpen}
+        onAllow={handleConsentAllow}
+        onDecline={handleConsentDecline}
+        purposeText={consentStatus === 'expired' ? "⚠️ Your consent for personalized learning has expired. Please grant fresh consent to continue personalizing your learning experience and recommendations." : ""}
+      />
     </div>
   );
 };
