@@ -15,11 +15,22 @@ export const generateAssessment = async (req, res, next) => {
       }
     });
   } catch (error) {
-    console.error('Error generating assessment config:', error);
-    
-    // Check if both providers failed or key is missing
     const errMsg = (error.message || '').toLowerCase();
-    if (errMsg.includes('failed') || errMsg.includes('unavailable') || errMsg.includes('limit') || errMsg.includes('key')) {
+    console.error('[Assessment] Generation failed:', error.message);
+
+    // Only return 503 for genuine AI provider failures (quota, network, auth)
+    const isProviderDown = 
+      errMsg.includes('quota') ||
+      errMsg.includes('rate limit') ||
+      errMsg.includes('resource_exhausted') ||
+      errMsg.includes('api key') ||
+      errMsg.includes('no api keys') ||
+      errMsg.includes('groq returned empty') ||
+      errMsg.includes('wsarecv') ||
+      errMsg.includes('econnreset') ||
+      errMsg.includes('socket hang up');
+
+    if (isProviderDown) {
       return res.status(503).json({
         success: false,
         error: 'AI_SERVICE_UNAVAILABLE',

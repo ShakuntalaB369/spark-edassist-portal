@@ -241,7 +241,8 @@ Return ONLY valid JSON. Start your response with { and end with }. No other text
         { role: 'user',   content: groqUserPrompt }
       ],
       temperature: 0.6,
-      response_format: { type: 'json_object' },
+      // No response_format — qwen/qwen3.6-27b does not support json_object mode.
+      // JSON extraction is handled by safeExtractJSON() with multi-strategy parsing.
     });
 
     const rawContent = response.choices[0]?.message?.content;
