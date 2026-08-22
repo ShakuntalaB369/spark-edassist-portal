@@ -206,32 +206,25 @@ export const aiService = {
 // ────────────────────────────────────────────────────────────────────────────
 const callGroq = async (prompt, systemInstruction, apiKey) => {
   console.log('[AI] Provider: Groq');
-  const groqModel = 'qwen/qwen3.6-27b';
+  const groqModel = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
   const groq = new Groq({ apiKey });
 
-  // Merged system instruction: original rules + strict JSON output rules.
-  // Also instructs the model to skip its <think> reasoning block entirely.
+  // Append strict JSON output rules to the existing system instruction.
+  // llama-3.3-70b-versatile natively supports response_format json_object,
+  // so we get guaranteed valid JSON without any regex extraction hacks.
   const groqSystem = `${systemInstruction}
 
-═══ OUTPUT FORMAT — MANDATORY ═══
-You MUST return a single valid JSON object.
-Rules:
-- NO <think> tags. Do not reason aloud. Output the JSON directly.
-- NO markdown code fences (no \`\`\`json or \`\`\`).
-- NO text before or after the JSON object.
-- NO explanations, introductions, conclusions, or commentary.
-- The response must begin with { and end with }.
-- All JSON string values must be properly escaped.
-- Mathematical notation inside strings: use double-backslash.
-  Examples: \\\\pi  \\\\frac{a}{b}  \\\\sqrt{x}  \\\\theta  \\\\cup
-- Caret notation (x^2) does not need escaping.
-- All other backslashes must be double-escaped: \\\\\\\\.
+MANDATORY OUTPUT FORMAT:
+- Return a single valid JSON object ONLY.
+- Do NOT include markdown code fences (\`\`\`json or \`\`\`).
+- Do NOT add any text, explanation, or commentary before or after the JSON.
+- The response must start with { and end with }.
+- Ensure all JSON strings are properly escaped.
 `;
 
   const groqUserPrompt = `${prompt}
 
-/no_think
-Return ONLY valid JSON. Start your response with { and end with }. No other text.`;
+Return ONLY valid JSON matching the schema above. No markdown. No explanation. No extra text.`;
 
   try {
     const response = await groq.chat.completions.create({
@@ -240,9 +233,8 @@ Return ONLY valid JSON. Start your response with { and end with }. No other text
         { role: 'system', content: groqSystem },
         { role: 'user',   content: groqUserPrompt }
       ],
-      temperature: 0.6,
-      // No response_format — qwen/qwen3.6-27b does not support json_object mode.
-      // JSON extraction is handled by safeExtractJSON() with multi-strategy parsing.
+      temperature: 0.7,
+      response_format: { type: 'json_object' }, // Supported by llama-3.3-70b-versatile
     });
 
     const rawContent = response.choices[0]?.message?.content;
