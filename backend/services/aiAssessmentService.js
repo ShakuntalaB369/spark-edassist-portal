@@ -51,12 +51,19 @@ export const aiAssessmentService = {
       numberOfQuestions
     } = config;
 
+    console.log('[AI] Subject:', subject);
+    console.log('[AI] Age Group:', ageGroup);
+    console.log('[AI] Context:', globalContext);
+    console.log('[AI] Difficulty:', difficulty);
+    console.log('[AI] Category:', category);
+    console.log('[AI] Questions requested:', numberOfQuestions);
+
     const systemInstruction = `
 You are an expert educational assessment developer. Your task is to generate high-quality, clear, and pedagogically sound questions.
 You must strictly follow the provided parameters:
 - Subject: ${subject}
 - Age Group: ${ageGroup} (ensure vocabulary, reading level, and concepts are highly appropriate for this age range)
-- Global Educational Context / Framework: ${globalContext} (align concepts, tone, or context with this country's pedagogical standards, assessment style, and real-world scenarios where appropriate. For example: Singapore focuses on skills development, applied learning, and structured problem-solving; Finland focuses on learner-centered, competency-based self-reflection; Japan focuses on analytical synthesis and precision; Germany incorporates structured applied/vocational context; India incorporates appropriate regional academic concepts. Integrate the selected country's educational context into the question design and/or scenario where relevant, but do not force irrelevant references into every question).
+- Global Educational Context: ${globalContext} (align concepts, tone, or context with this country's pedagogical standards, assessment style, and real-world scenarios where appropriate. Do not force irrelevant references).
 - Assessment Category: ${category}
 - Difficulty: ${difficulty}
 - Bloom's Taxonomy Level: ${bloomLevel}
@@ -64,10 +71,15 @@ You must strictly follow the provided parameters:
 - Number of Questions to generate: ${numberOfQuestions}
 
 CRITICAL RULES FOR QUESTION GENERATION:
-1. Every question in the same assessment must be uniquely different, testing a distinct subtopic or concept of "${subject}" (e.g., if subject is Physics, cover different concepts like motion, acceleration, forces, pressure, waves, electricity, thermodynamics, etc.).
-2. Do NOT repeat question structures, wording templates, or reuse the same prompt template.
-3. Distractors (incorrect choices) must be contextually plausible and related directly to the question's specific scenario.
-4. Avoid any generic placeholder-style distractors or options (like 'Primary structural framework', 'Supporting auxiliary component', 'Conceptual implementation guideline', or 'None of the above').
+0. THINKING LIMIT: Keep your thinking process (within <think>...</think> tags) extremely brief and under 50 words. Immediately output the JSON once the brief thinking is done.
+1. SUBJECT-SPECIFICITY: The questions MUST test actual, specific concepts in "${subject}".
+   - Mathematics: Generate actual math problems (e.g., algebra, geometry, probability, equations) requiring calculation or logic.
+   - Physics: Generate specific physical scenarios (e.g., motion, force, energy, thermodynamics).
+   - English: Generate specific grammar, vocabulary, usage, or comprehension questions.
+   - NEVER generate generic questions like "Explain a core concept of ${subject} appropriate for a student..."
+2. UNIQUENESS: Every question must be completely unique. Do not repeat question structures, concepts, or wording. Randomize topics within the subject to ensure variety. No duplicate options.
+3. DISTRACTORS: Incorrect options must be plausible and related directly to the specific scenario.
+4. Avoid any generic placeholder-style distractors or options (like 'Primary structural framework', 'Supporting auxiliary component', 'Conceptual implementation guideline', 'None of the above', or 'All of the above').
 5. Exactly ONE option must be clearly correct. The correctAnswer must match one of the options elements exactly.
 6. Ensure every question is independently answerable without relying on previous or subsequent questions.
 
@@ -196,7 +208,7 @@ Return ONLY this JSON object structure:
       if (!parsed.questions || !Array.isArray(parsed.questions)) {
         throw new Error('AI response does not contain a valid questions array');
       }
-      console.log('[AI] Schema validation successful');
+      console.log('[AI] JSON validation successful');
 
       if (parsed.questions.length !== parseInt(numberOfQuestions)) {
         console.warn(`[AI] Expected ${numberOfQuestions} questions but got ${parsed.questions.length}. Proceeding with available.`);

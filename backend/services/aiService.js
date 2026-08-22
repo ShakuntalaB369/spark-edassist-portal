@@ -148,6 +148,7 @@ export const safeExtractJSON = (rawContent) => {
   }
 
   // ── All strategies exhausted ─────────────────────────────────────────────
+  console.error('[AI] rawContent that failed parsing:', rawContent);
   const preview = rawContent.substring(0, 300).replace(/\n/g, ' ');
   throw new Error(
     `safeExtractJSON: could not extract valid JSON from AI response.\n` +
@@ -205,8 +206,9 @@ export const aiService = {
 
 // ────────────────────────────────────────────────────────────────────────────
 const callGroq = async (prompt, systemInstruction, apiKey) => {
-  const groqModel = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
-  console.log('[AI] Groq model:', groqModel);
+  const groqModel = process.env.GROQ_MODEL || 'qwen/qwen3.6-27b';
+  console.log('[AI] Provider: Groq');
+  console.log('[AI] Model:', groqModel);
   const groq = new Groq({ apiKey });
 
   // Append strict JSON output rules to the existing system instruction.
@@ -231,17 +233,17 @@ Return ONLY valid JSON matching the schema above. No markdown. No explanation. N
         { role: 'system', content: groqSystem },
         { role: 'user', content: groqUserPrompt }
       ],
-      temperature: 0.7,
-      // response_format json_object is omitted: the system prompt contains JSON schema
-      // examples with { } braces which cause Groq's validator to fail (json_validate_failed).
-      // safeExtractJSON() reliably extracts clean JSON from Llama's plain-text response.
+      temperature: 0.8,
+      max_tokens: 4096,
+      // We do not pass response_format as it can cause validation failures if the prompt contains schema examples
+      // We do not pass unsupported parameters like thinking.
     });
 
     const rawContent = response.choices[0]?.message?.content;
     if (!rawContent) throw new Error('Groq returned empty content');
 
-    console.log('[AI] Raw response received');
-    console.log('[AI] Groq success. Raw length:', rawContent.length);
+    console.log('[AI] Groq success');
+    // console.log('[AI] Raw length:', rawContent.length); // Kept out to match requested logs, or keep it
 
     return { provider: 'groq', content: rawContent };
 
