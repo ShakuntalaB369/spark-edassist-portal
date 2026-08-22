@@ -149,7 +149,31 @@ For Short Answer (questionType = "Short Answer"):
 }
 `;
 
-    const userPrompt = `Generate exactly ${numberOfQuestions} unique, concept-specific questions of type ${questionType} for subject ${subject} targeting age group ${ageGroup} under global context ${globalContext}. Ensure options are highly specific to the questions asked, and all options are completely unique.`;
+    const userPrompt = `Generate exactly ${numberOfQuestions} unique, concept-specific questions of type ${questionType} for subject ${subject} targeting age group ${ageGroup} under global context ${globalContext}.
+Ensure options are highly specific to the questions asked, and all options are completely unique.
+
+CRITICAL FORMATTING INSTRUCTION:
+You MUST output a single valid JSON object following the structure below.
+Do NOT output a list like "Concept: ... Context: ... Question: ...".
+Do NOT output any markdown tags or headings.
+Return ONLY this JSON object structure:
+{
+  "questions": [
+    {
+      "id": "string",
+      "question": "string",
+      "options": ["string", "string", "string", "string"],
+      "correctAnswer": "string (must match one of options)",
+      "category": "${category}",
+      "difficulty": "${difficulty}",
+      "bloomLevel": "${bloomLevel}",
+      "questionType": "${questionType}",
+      "explanation": "string",
+      "references": []
+    }
+  ]
+}
+`;
 
     try {
       const response = await aiService.generateAIResponse(userPrompt, systemInstruction);
