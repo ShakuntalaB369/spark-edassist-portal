@@ -105,6 +105,12 @@ Return valid JSON only. Do not include markdown codeblocks or conversational tex
       if (content.includes('<think>')) {
         content = content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
       }
+      // Extract only the JSON block (from first '{' to last '}')
+      const startJsonIdx = content.indexOf('{');
+      const endJsonIdx = content.lastIndexOf('}');
+      if (startJsonIdx !== -1 && endJsonIdx !== -1) {
+        content = content.substring(startJsonIdx, endJsonIdx + 1);
+      }
       return {
         provider: 'groq',
         content
