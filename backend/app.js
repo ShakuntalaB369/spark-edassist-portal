@@ -16,6 +16,8 @@ const app = express();
 const allowedOrigins = [
   'http://localhost:5173',
   'http://localhost:5174',
+  'https://spark-edassist-portal-ten.vercel.app',
+  'https://spark-edassist-portal-e0u4ut51m-mdbasimalis-projects.vercel.app',
 ];
 
 // Support comma-separated CLIENT_URL env var (e.g. for multiple Vercel preview URLs)
