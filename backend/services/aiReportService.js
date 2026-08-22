@@ -91,8 +91,25 @@ ${JSON.stringify(detailsList)}
 
       return parsed;
     } catch (error) {
-      console.error('Report Generation Error:', error);
-      throw error;
+      console.warn('[AI Report] Generation failed, returning mathematical fallback template:', error.message);
+      
+      // Fallback template matching the exact expected JSON schema
+      return {
+        strengths: ['Successfully completed the assessment configuration.'],
+        weakAreas: ['Review any incorrect questions to identify areas of improvement.'],
+        bloomAnalysis: bloomStats || {},
+        categoryAnalysis: categoryStats || {},
+        difficultyAnalysis: difficultyStats || {},
+        recommendations: [
+          {
+            topic: configuration.subject || 'General Practice',
+            reason: 'Practice session completed.',
+            recommendation: 'Review your detailed answer breakdown to reinforce concepts.'
+          }
+        ],
+        suggestedTopics: [configuration.subject || 'General Practice', 'Adaptive Problem Solving'],
+        summary: `You scored ${score} out of ${totalQuestions} (${percentage}%). Keep practicing to improve mastery.`
+      };
     }
   }
 };
