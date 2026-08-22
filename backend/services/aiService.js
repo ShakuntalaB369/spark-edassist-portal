@@ -69,7 +69,10 @@ export const aiService = {
 const callGroq = async (prompt, systemInstruction, apiKey) => {
   try {
     console.log('[AI] Trying Groq...');
-    const groqModel = process.env.GROQ_MODEL || 'llama-3.3-70b-versatile';
+    let groqModel = process.env.GROQ_MODEL || 'qwen/qwen3.6-27b';
+    if (groqModel === 'llama-3.3-70b-versatile') {
+      groqModel = 'qwen/qwen3.6-27b'; // Force redirect invalid model
+    }
     const groq = new Groq({ apiKey });
 
     // Explicit Groq prompt guidelines to prevent json_validate_failed
