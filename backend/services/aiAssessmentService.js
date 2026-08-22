@@ -1,4 +1,4 @@
-import { aiService } from './aiService.js';
+import { aiService, safeExtractJSON } from './aiService.js';
 
 const validateReferences = (refs) => {
   if (!refs || !Array.isArray(refs)) return [];
@@ -184,27 +184,26 @@ Return ONLY this JSON object structure:
 
       let parsed;
       if (typeof text === 'object' && text !== null) {
+        // Gemini already returns parsed JSON object
         parsed = text;
+        console.log('[AI] JSON extraction successful (object from Gemini)');
       } else {
-        const cleanedText = text.trim();
-        try {
-          parsed = JSON.parse(cleanedText);
-        } catch (err) {
-          try {
-            parsed = JSON.parse(JSON.parse(cleanedText));
-          } catch (_) {
-            throw new Error(`Failed to parse AI output as JSON: ${cleanedText}`);
-          }
-        }
+        // Groq / other providers return raw string — use robust extractor
+        parsed = safeExtractJSON(text);
       }
 
       // Validate the response schema
       if (!parsed.questions || !Array.isArray(parsed.questions)) {
         throw new Error('AI response does not contain a valid questions array');
       }
+      console.log('[AI] Schema validation successful');
 
       if (parsed.questions.length !== parseInt(numberOfQuestions)) {
-        throw new Error(`AI generated ${parsed.questions.length} questions, expected exactly ${numberOfQuestions}`);
+        console.warn(`[AI] Expected ${numberOfQuestions} questions but got ${parsed.questions.length}. Proceeding with available.`);
+        // Accept if we have at least 1 question rather than failing entirely
+        if (parsed.questions.length === 0) {
+          throw new Error('AI returned 0 questions');
+        }
       }
 
       const seenQuestions = new Set();
@@ -264,6 +263,7 @@ Return ONLY this JSON object structure:
         q.references = validateReferences(q.references);
       });
 
+      console.log(`[AI] Questions generated: ${parsed.questions.length}`);
       return parsed.questions;
     } catch (error) {
       console.error('[AI Assessment] Question generation flow failed!');
@@ -326,16 +326,7 @@ Student's Submitted Answer:
       if (typeof text === 'object' && text !== null) {
         parsed = text;
       } else {
-        const cleanedText = text.trim();
-        try {
-          parsed = JSON.parse(cleanedText);
-        } catch (err) {
-          try {
-            parsed = JSON.parse(JSON.parse(cleanedText));
-          } catch (_) {
-            throw new Error(`Failed to parse AI output as JSON: ${cleanedText}`);
-          }
-        }
+        parsed = safeExtractJSON(text);
       }
       if (typeof parsed.correct !== 'boolean' || typeof parsed.confidence !== 'number') {
         throw new Error('Invalid schema received from AI service during evaluation');

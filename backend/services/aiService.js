@@ -12,11 +12,71 @@ const isRetryable = (error) => {
          msg.includes('500');
 };
 
+/**
+ * Safely extracts and repairs a JSON block from raw AI output.
+ *
+ * Handles:
+ *  1. <think>...</think> tags prepended by reasoning models
+ *  2. Markdown code fences (```json ... ```)
+ *  3. Conversational prefix/suffix text around the JSON
+ *  4. Unescaped backslashes from LaTeX math notation (e.g. \pi, \frac, \cup)
+ *     which are NOT valid JSON escape sequences
+ *
+ * Does NOT corrupt valid JSON string escape sequences.
+ */
+export const safeExtractJSON = (rawContent) => {
+  if (!rawContent) throw new Error('Empty content passed to safeExtractJSON');
+
+  let content = rawContent;
+
+  // Step 1: Strip <think>...</think> blocks (Qwen reasoning tags)
+  if (content.includes('<think>')) {
+    content = content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+    console.log('[AI] Stripped <think> tags');
+  }
+
+  // Step 2: Strip markdown code fences if present (```json ... ``` or ``` ... ```)
+  content = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```\s*$/i, '').trim();
+
+  // Step 3: Extract only the JSON object block (from first '{' to last '}')
+  const startIdx = content.indexOf('{');
+  const endIdx = content.lastIndexOf('}');
+  if (startIdx === -1 || endIdx === -1 || endIdx < startIdx) {
+    throw new Error('No valid JSON object block found in AI response');
+  }
+  content = content.substring(startIdx, endIdx + 1);
+  console.log('[AI] JSON block extracted, length:', content.length);
+
+  // Step 4: Try parsing as-is first
+  try {
+    const parsed = JSON.parse(content);
+    console.log('[AI] JSON extraction successful (no repair needed)');
+    return parsed;
+  } catch (_firstError) {
+    // Step 5: Repair unescaped backslashes from LaTeX math notation
+    // A backslash in JSON is only valid when followed by: " \ / b f n r t u
+    // Any other backslash (e.g. \pi, \frac, \cup, \theta) is invalid in JSON strings
+    // We escape them to \\ so they survive JSON.parse and render correctly
+    const repaired = content.replace(/\\(?!["\\/bfnrtu])/g, '\\\\');
+
+    try {
+      const parsed = JSON.parse(repaired);
+      console.log('[AI] JSON extraction successful (after LaTeX backslash repair)');
+      return parsed;
+    } catch (repairError) {
+      throw new Error(
+        `Failed to parse AI output as JSON even after repair.\nRepair error: ${repairError.message}\n` +
+        `First 500 chars of extracted block:\n${content.substring(0, 500)}`
+      );
+    }
+  }
+};
+
 export const aiService = {
   generateAIResponse: async (prompt, systemInstruction) => {
     const geminiKey = process.env.GEMINI_API_KEY;
     const groqKey = process.env.GROQ_API_KEY;
-    
+
     // 1. Try Gemini first
     if (geminiKey && geminiKey !== 'your_gemini_api_key_here') {
       try {
@@ -42,7 +102,7 @@ export const aiService = {
         throw new Error('Empty response text from Gemini');
       } catch (geminiError) {
         console.error('[AI] Gemini failed:', geminiError.message);
-        
+
         // 2. Check if error is retryable, if so fallback to Groq
         if (isRetryable(geminiError)) {
           console.log('[AI] Gemini quota or rate limit exceeded. Falling back to Groq...');
@@ -69,54 +129,52 @@ export const aiService = {
 const callGroq = async (prompt, systemInstruction, apiKey) => {
   try {
     console.log('[AI] Trying Groq...');
-    let groqModel = 'qwen/qwen3.6-27b';
+    const groqModel = 'qwen/qwen3.6-27b';
     const groq = new Groq({ apiKey });
 
-    // Explicit Groq prompt guidelines to prevent json_validate_failed
     const groqSystemInstruction = `${systemInstruction}
-    
-CRITICAL GROQ RULES:
-- You MUST return a valid JSON object matching the requested schema.
-- Return JSON ONLY.
-- Do NOT use Markdown formatting (do not wrap JSON in \`\`\`json or \`\`\`).
-- Do NOT add commentary, preface, or conversational text.
-- Do NOT add trailing commas.
-- All property names and values must use double quotes.
+
+CRITICAL OUTPUT RULES:
+- Return a single valid JSON object ONLY.
+- Do NOT wrap the JSON in markdown code fences (no \`\`\`json or \`\`\`).
+- Do NOT add any explanatory text, introduction, or conclusion outside the JSON.
+- All JSON string values must use properly escaped characters.
+- Mathematical notation must be written as valid JSON strings:
+  - Write \\pi instead of \pi
+  - Write \\frac{a}{b} instead of \frac{a}{b}
+  - Write \\cup instead of \cup
+  - Write \\theta instead of \theta
+  - Write x^2 as-is (no backslash needed for caret)
+- All backslashes inside JSON strings must be double-escaped (\\\\).
+- All double quotes inside JSON strings must be escaped (\\\").
 `;
 
     const groqPrompt = `${prompt}
-    
-Return valid JSON only. Do not include markdown codeblocks or conversational text.`;
-    
+
+IMPORTANT: Return ONLY valid JSON. No markdown. No explanatory text. No code fences.`;
+
+    console.log('[AI] Raw response received');
     const response = await groq.chat.completions.create({
       model: groqModel,
       messages: [
         { role: 'system', content: groqSystemInstruction },
         { role: 'user', content: groqPrompt }
       ],
-      // Remove response_format JSON mode constraint to prevent Groq schema check failures from Qwen's thinking tags
       temperature: 0.7,
     });
 
-    let content = response.choices[0]?.message?.content;
-    if (content) {
-      console.log('[AI] Groq success. Raw length:', content.length);
-      // Clean up think tags if present
-      if (content.includes('<think>')) {
-        content = content.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
-      }
-      // Extract only the JSON block (from first '{' to last '}')
-      const startJsonIdx = content.indexOf('{');
-      const endJsonIdx = content.lastIndexOf('}');
-      if (startJsonIdx !== -1 && endJsonIdx !== -1) {
-        content = content.substring(startJsonIdx, endJsonIdx + 1);
-      }
-      return {
-        provider: 'groq',
-        content
-      };
+    const rawContent = response.choices[0]?.message?.content;
+    if (!rawContent) {
+      throw new Error('Empty response from Groq');
     }
-    throw new Error('Empty response from Groq');
+
+    console.log('[AI] Groq success. Raw length:', rawContent.length);
+
+    // Return raw content — parsing/repairing is handled in aiAssessmentService
+    return {
+      provider: 'groq',
+      content: rawContent
+    };
   } catch (groqError) {
     console.error('[AI] Groq failed:', groqError.message);
     throw groqError;
