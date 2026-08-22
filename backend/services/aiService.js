@@ -230,6 +230,7 @@ Rules:
 
   const groqUserPrompt = `${prompt}
 
+/no_think
 Return ONLY valid JSON. Start your response with { and end with }. No other text.`;
 
   try {
@@ -240,10 +241,7 @@ Return ONLY valid JSON. Start your response with { and end with }. No other text
         { role: 'user',   content: groqUserPrompt }
       ],
       temperature: 0.6,
-      // Disable Qwen3 thinking mode so the model outputs JSON directly
-      // without wrapping its reasoning in <think> blocks.
-      // eslint-disable-next-line camelcase
-      thinking: { type: 'disabled' },
+      response_format: { type: 'json_object' },
     });
 
     const rawContent = response.choices[0]?.message?.content;
