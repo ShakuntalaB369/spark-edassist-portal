@@ -62,7 +62,7 @@ export const SkillEnhanceOverview = ({ initialConfig, onStart, onBack, onSelectR
     try {
       const res = await skillEnhanceService.deleteSkillEnhance(deleteTargetId);
       if (res?.success) {
-        setHistory(prev => prev.filter(item => item._id !== deleteTargetId));
+        setHistory(prev => prev.map(item => item._id === deleteTargetId ? { ...item, deletedFromHistory: true } : item));
       } else {
         throw new Error(res?.message || 'Failed to delete');
       }
@@ -947,14 +947,14 @@ export const SkillEnhanceOverview = ({ initialConfig, onStart, onBack, onSelectR
               <History size={15} className="text-[#1E3A8A] dark:text-blue-400" />
               <span>Assessment History</span>
             </h3>
-            {history.length > 0 && (
+            {history.filter(item => !item.deletedFromHistory).length > 0 && (
               <span className="text-[11px] text-slate-400 font-medium">
-                {showAllHistory ? history.length : Math.min(3, history.length)} of {history.length}
+                {showAllHistory ? history.filter(item => !item.deletedFromHistory).length : Math.min(3, history.filter(item => !item.deletedFromHistory).length)} of {history.filter(item => !item.deletedFromHistory).length}
               </span>
             )}
           </div>
 
-          {history.length === 0 ? (
+          {history.filter(item => !item.deletedFromHistory).length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 gap-2 text-center">
               <History size={22} className="text-slate-300 dark:text-slate-600" />
               <p className="text-[12.5px] text-slate-400 dark:text-slate-500">No assessments completed yet.</p>
@@ -962,7 +962,8 @@ export const SkillEnhanceOverview = ({ initialConfig, onStart, onBack, onSelectR
           ) : (
             <>
               <div className="flex flex-col gap-3">
-                {[...history]
+                {history
+                  .filter(item => !item.deletedFromHistory)
                   .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt))
                   .slice(0, showAllHistory ? undefined : 3)
                   .map((attempt) => {
@@ -1007,7 +1008,7 @@ export const SkillEnhanceOverview = ({ initialConfig, onStart, onBack, onSelectR
                   })}
               </div>
 
-              {history.length > 3 && (
+              {history.filter(item => !item.deletedFromHistory).length > 3 && (
                 <button
                   onClick={() => setShowAllHistory(prev => !prev)}
                   className="self-center flex items-center gap-1.5 text-[11.5px] font-semibold text-slate-400 hover:text-[#1E3A8A] dark:hover:text-blue-400 transition-colors duration-150 py-1.5 px-3 rounded-lg hover:bg-slate-50 dark:hover:bg-white/5"
@@ -1015,7 +1016,7 @@ export const SkillEnhanceOverview = ({ initialConfig, onStart, onBack, onSelectR
                   {showAllHistory ? (
                     <><ChevronUp size={13} strokeWidth={2.2} /> Show Less</>
                   ) : (
-                    <><ChevronDown size={13} strokeWidth={2.2} /> Show {history.length - 3} More</>
+                    <><ChevronDown size={13} strokeWidth={2.2} /> Show {history.filter(item => !item.deletedFromHistory).length - 3} More</>
                   )}
                 </button>
               )}
@@ -1029,14 +1030,14 @@ export const SkillEnhanceOverview = ({ initialConfig, onStart, onBack, onSelectR
             <h3 className="font-bold text-[13.5px] text-slate-900 dark:text-white uppercase tracking-wider">
               Recent Activity
             </h3>
-            {history.length > 0 && (
+            {history.filter(item => !item.deletedFromHistory).length > 0 && (
               <span className="text-[11px] text-slate-400 font-medium">
-                {showAllActivity ? history.length : Math.min(5, history.length)} of {history.length}
+                {showAllActivity ? history.filter(item => !item.deletedFromHistory).length : Math.min(5, history.filter(item => !item.deletedFromHistory).length)} of {history.filter(item => !item.deletedFromHistory).length}
               </span>
             )}
           </div>
 
-          {history.length === 0 ? (
+          {history.filter(item => !item.deletedFromHistory).length === 0 ? (
             <div className="flex flex-col items-center justify-center py-6 gap-2 text-center">
               <Zap size={20} className="text-slate-300 dark:text-slate-600" />
               <p className="text-[12px] text-slate-400 dark:text-slate-500">No activity yet.</p>
@@ -1044,7 +1045,8 @@ export const SkillEnhanceOverview = ({ initialConfig, onStart, onBack, onSelectR
           ) : (
             <>
               <div className="flex flex-col text-xs text-left">
-                {[...history]
+                {history
+                  .filter(item => !item.deletedFromHistory)
                   .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt))
                   .slice(0, showAllActivity ? undefined : 5)
                   .map((item, idx) => {
@@ -1078,7 +1080,7 @@ export const SkillEnhanceOverview = ({ initialConfig, onStart, onBack, onSelectR
                   })}
               </div>
 
-              {history.length > 5 && (
+              {history.filter(item => !item.deletedFromHistory).length > 5 && (
                 <button
                   onClick={() => setShowAllActivity(prev => !prev)}
                   className="self-center flex items-center gap-1.5 text-[11.5px] font-semibold text-slate-400 hover:text-[#1E3A8A] dark:hover:text-blue-400 transition-colors duration-150 py-1.5 px-3 rounded-lg hover:bg-slate-50 dark:hover:bg-white/5"
@@ -1086,7 +1088,7 @@ export const SkillEnhanceOverview = ({ initialConfig, onStart, onBack, onSelectR
                   {showAllActivity ? (
                     <><ChevronUp size={13} strokeWidth={2.2} /> Show Less</>
                   ) : (
-                    <><ChevronDown size={13} strokeWidth={2.2} /> Show {history.length - 5} More</>
+                    <><ChevronDown size={13} strokeWidth={2.2} /> Show {history.filter(item => !item.deletedFromHistory).length - 5} More</>
                   )}
                 </button>
               )}

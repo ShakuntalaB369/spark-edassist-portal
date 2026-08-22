@@ -83,6 +83,10 @@ const assessmentSchema = new mongoose.Schema({
   completedAt: {
     type: Date,
     default: Date.now
+  },
+  deletedFromHistory: {
+    type: Boolean,
+    default: false
   }
 }, { timestamps: true });
 

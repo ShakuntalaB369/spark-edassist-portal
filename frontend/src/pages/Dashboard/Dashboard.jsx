@@ -148,8 +148,10 @@ const CategoryAnalysisDashboard = ({ category, history, onBack, handleViewReport
   const improvement = lastScore - firstScore;
   const improvementSign = improvement >= 0 ? `+${improvement}%` : `${improvement}%`;
 
-  // 7. Performance over time (in chronological order, i.e., reversed catItems)
-  const chronologicalItems = [...catItems].reverse();
+  const visibleCatItems = catItems.filter(item => !item.deletedFromHistory);
+
+  // 7. Performance over time (in chronological order, i.e., reversed visibleCatItems)
+  const chronologicalItems = [...visibleCatItems].reverse();
 
   // 8. Difficulty Analysis
   const difficultyMap = { Easy: { score: 0, total: 0 }, Medium: { score: 0, total: 0 }, Hard: { score: 0, total: 0 } };
@@ -329,11 +331,11 @@ const CategoryAnalysisDashboard = ({ category, history, onBack, handleViewReport
         <div className="flex items-center justify-between">
           <h4 className="text-[12.8px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">{category} Assessment History</h4>
           <span className="text-[11px] text-slate-400 font-medium">
-            {showAllCatHistory ? catItems.length : Math.min(5, catItems.length)} of {catItems.length}
+            {showAllCatHistory ? visibleCatItems.length : Math.min(5, visibleCatItems.length)} of {visibleCatItems.length}
           </span>
         </div>
         <div className="flex flex-col gap-3">
-          {[...catItems]
+          {[...visibleCatItems]
             .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt))
             .slice(0, showAllCatHistory ? undefined : 5)
             .map((item) => (
@@ -436,6 +438,7 @@ export const Dashboard = () => {
   const [consentStatus, setConsentStatus] = useState(null); // null | 'granted' | 'declined'
   const [isConsentModalOpen, setIsConsentModalOpen] = useState(false);
   const [consentConflict, setConsentConflict] = useState(null); // null | { status, message }
+
 
   useEffect(() => {
     const fetchConsent = async () => {
@@ -662,18 +665,7 @@ export const Dashboard = () => {
     try {
       const res = await assessmentService.deleteAssessment(deleteTargetId);
       if (res.success) {
-        setHistory(prev => prev.filter(item => item._id !== deleteTargetId));
-        
-        // Refresh mastery metrics
-        const masteryRes = await assessmentService.getMyMastery();
-        if (masteryRes.success && masteryRes.data) {
-          const { foundational, applied, collaborative, reflective } = masteryRes.data;
-          setFoundationalScore(foundational * 0.40);
-          setAppliedScore(applied * 0.30);
-          setCollaborativeScore(collaborative * 0.20);
-          setReflectiveScore(reflective * 0.10);
-        }
-        
+        setHistory(prev => prev.map(item => item._id === deleteTargetId ? { ...item, deletedFromHistory: true } : item));
         triggerToast("Assessment deleted successfully.");
       } else {
         throw new Error(res.message || "Failed to delete assessment");
@@ -807,9 +799,15 @@ export const Dashboard = () => {
               <FoundationalTab />
             </DashboardCard>
           ) : activeWorkspaceMode === 'privacy' ? (
-            <DashboardCard className="min-h-[380px]">
-              <div className="flex justify-between items-center mb-4">
-                <Button variant="pill" onClick={() => setActiveWorkspaceMode(null)}>← Back to Entry Options</Button>
+            <DashboardCard className="min-h-[380px] !p-4 sm:!p-6">
+              <div className="flex justify-between items-center mb-4 px-1 sm:px-0">
+                <Button 
+                  variant="pill" 
+                  onClick={() => setActiveWorkspaceMode(null)}
+                  className="min-h-[44px] px-4 py-2.5 rounded-xl text-[13px] font-bold shadow-sm flex items-center justify-center"
+                >
+                  ← Back to Entry Options
+                </Button>
               </div>
               <PrivacySettings 
                 triggerToast={triggerToast}
@@ -969,9 +967,9 @@ export const Dashboard = () => {
               <DashboardCard className="flex flex-col gap-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-[0.1em]">Assessment History</h3>
-                  {history.length > 0 && (
+                  {history.filter(item => !item.deletedFromHistory).length > 0 && (
                     <span className="text-[11px] text-slate-400 font-medium">
-                      {showAllAssessmentHistory ? history.length : Math.min(5, history.length)} of {history.length}
+                      {showAllAssessmentHistory ? history.filter(item => !item.deletedFromHistory).length : Math.min(5, history.filter(item => !item.deletedFromHistory).length)} of {history.filter(item => !item.deletedFromHistory).length}
                     </span>
                   )}
                 </div>
@@ -980,7 +978,7 @@ export const Dashboard = () => {
                   <p className="text-[13px] text-slate-400 dark:text-slate-500 py-2">Loading history...</p>
                 ) : historyError ? (
                   <p className="text-[13px] text-rose-500">{historyError}</p>
-                ) : history.length === 0 ? (
+                ) : history.filter(item => !item.deletedFromHistory).length === 0 ? (
                   <div className="flex flex-col items-center justify-center py-10 gap-3 text-center">
                     <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-white/5 flex items-center justify-center">
                       <BookOpen size={18} className="text-slate-400" />
@@ -992,7 +990,8 @@ export const Dashboard = () => {
                   </div>
                 ) : (() => {
                   // Flatten all items sorted newest→oldest, then apply limit
-                  const sorted = [...history].sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
+                  const nonDeleted = history.filter(item => !item.deletedFromHistory);
+                  const sorted = [...nonDeleted].sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
                   const visible = showAllAssessmentHistory ? sorted : sorted.slice(0, 5);
                   // Re-group visible items by category
                   const catColors = {

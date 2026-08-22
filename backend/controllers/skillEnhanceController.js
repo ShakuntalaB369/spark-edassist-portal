@@ -263,7 +263,7 @@ export const deleteSkillEnhance = async (req, res, next) => {
       });
     }
 
-    await SkillEnhance.findByIdAndDelete(id);
+    await SkillEnhance.findByIdAndUpdate(id, { deletedFromHistory: true });
 
     return res.status(200).json({
       success: true,

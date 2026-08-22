@@ -31,7 +31,8 @@ const skillEnhanceSchema = new mongoose.Schema({
   percentage: { type: Number, required: true },
   timeTaken: { type: Number },
   report: { type: mongoose.Schema.Types.Mixed },
-  completedAt: { type: Date, default: Date.now }
+  completedAt: { type: Date, default: Date.now },
+  deletedFromHistory: { type: Boolean, default: false }
 }, { timestamps: true });
 
 export const SkillEnhance = mongoose.model('SkillEnhance', skillEnhanceSchema);

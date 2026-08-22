@@ -173,7 +173,7 @@ export const getMyAssessments = async (req, res, next) => {
   try {
     const userId = req.user._id;
     const assessments = await Assessment.find({ userId })
-      .select('configuration score totalQuestions percentage completedAt')
+      .select('configuration score totalQuestions percentage completedAt deletedFromHistory')
       .sort({ createdAt: -1 });
 
     console.log(`[HISTORY] userId: ${userId} count: ${assessments.length}`);
@@ -196,7 +196,7 @@ export const getMyAssessmentById = async (req, res, next) => {
     const { id } = req.params;
     const userId = req.user._id;
 
-    const assessment = await Assessment.findById(id);
+    const assessment = await Assessment.findOne({ _id: id, deletedFromHistory: { $ne: true } });
     if (!assessment) {
       return res.status(404).json({
         success: false,
@@ -227,7 +227,7 @@ export const getMyAssessmentById = async (req, res, next) => {
 export const getMyMastery = async (req, res, next) => {
   try {
     const userId = req.user._id;
-    const assessments = await Assessment.find({ userId });
+    const assessments = await Assessment.find({ userId }); // Fetches all, including soft-deleted ones
 
     const categorySums = {
       Foundational: { sum: 0, count: 0 },
@@ -296,7 +296,7 @@ export const deleteAssessment = async (req, res, next) => {
       });
     }
 
-    await Assessment.findByIdAndDelete(id);
+    await Assessment.findByIdAndUpdate(id, { deletedFromHistory: true });
 
     return res.status(200).json({
       success: true,

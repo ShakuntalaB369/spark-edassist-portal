@@ -58,23 +58,24 @@ export const SkillEnhanceHistory = ({ triggerToast, onSelectReport, refreshTrigg
           <h3 className="text-[16px] font-bold text-slate-900 dark:text-white">✨ Skill Enhance History</h3>
           <p className="text-[12px] text-slate-500">Track and review your previous multi-subject global challenges.</p>
         </div>
-        {history.length > 0 && (
-          <span className="text-[11px] text-slate-400 font-medium shrink-0">
-            {showAll ? history.length : Math.min(3, history.length)} of {history.length}
-          </span>
-        )}
+      {history.filter(item => !item.deletedFromHistory).length > 0 && (
+        <span className="text-[11px] text-slate-400 font-medium shrink-0">
+          {showAll ? history.filter(item => !item.deletedFromHistory).length : Math.min(3, history.filter(item => !item.deletedFromHistory).length)} of {history.filter(item => !item.deletedFromHistory).length}
+        </span>
+      )}
       </div>
 
-      {loading && history.length === 0 ? (
+      {loading && history.filter(item => !item.deletedFromHistory).length === 0 ? (
         <div className="flex justify-center py-8">
           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-500"></div>
         </div>
-      ) : history.length === 0 ? (
+      ) : history.filter(item => !item.deletedFromHistory).length === 0 ? (
         <p className="text-[13px] text-slate-500 py-4 text-center">No Skill Enhance sessions completed yet.</p>
       ) : (
         <>
           <div className="flex flex-col gap-3">
-            {[...history]
+            {history
+              .filter(item => !item.deletedFromHistory)
               .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt))
               .slice(0, showAll ? undefined : 3)
               .map((item) => (
