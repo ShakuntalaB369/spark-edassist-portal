@@ -1,4 +1,4 @@
-import { aiService } from './aiService.js';
+import { aiService, safeExtractJSON } from './aiService.js';
 
 export const aiReportService = {
   generateReportAnalysis: async (reportData) => {
@@ -82,7 +82,12 @@ ${JSON.stringify(detailsList)}
         throw new Error('Empty response received from AI service for report');
       }
 
-      const parsed = JSON.parse(text.trim());
+      let parsed;
+      if (typeof text === 'object' && text !== null) {
+        parsed = text;
+      } else {
+        parsed = safeExtractJSON(text);
+      }
 
       // Validate schema
       if (!Array.isArray(parsed.strengths) || !Array.isArray(parsed.weakAreas) || !parsed.bloomAnalysis || !parsed.categoryAnalysis || !parsed.difficultyAnalysis || !Array.isArray(parsed.recommendations) || !Array.isArray(parsed.suggestedTopics) || !parsed.summary) {

@@ -1,4 +1,4 @@
-import { aiService } from './aiService.js';
+import { aiService, safeExtractJSON } from './aiService.js';
 import { ALLOWED_COUNTRIES, ALLOWED_SUBJECTS } from '../config/constants.js';
 
 const validateReferences = (refs) => {
@@ -51,13 +51,11 @@ Each question MUST strictly align with the provided parameters:
 - Student Age Group: ${ageGroup} (ensure vocabulary, reading level, and concepts are highly appropriate for this age range)
 - Difficulty: ${difficulty} (ensure complexity, depth, and cognitive load are perfectly aligned with this difficulty level)
 
-The prompt will specify the random combination of subject and global educational context / framework for each of the 10 questions.
-For each question, the selected global context MUST meaningfully influence the question scenario or content (do not just attach a generic label; e.g. for Germany, use renewable energy/vocation/environment context; for Japan, use precision technology/cultural integration).
-
-For each question, you MUST also generate a "references" array containing 1 to 3 reputable educational learning resources specifically relevant to the concept tested.
-The resources should be age-appropriate for the student.
-URLs must be syntactically valid HTTPS links from reputable platforms (e.g., Khan Academy, Britannica, NASA, National Geographic, MIT, Stanford, official university or government education sites, MDN, Python docs).
-Do NOT invent URLs. Ensure the URLs are valid and functional.
+CRITICAL RULES FOR QUESTION GENERATION:
+0. NO DRAFTING IN THINKING: Do NOT draft the questions, options, or explanations inside the <think>...</think> tags. Keep your thinking process to a general 1-sentence overview. Immediately output the JSON block once done. This is critical to prevent running out of tokens.
+1. Each question MUST align with the assigned subject and global context.
+2. Ensure options are highly specific to the questions asked. No generic placeholders.
+3. Every question must be completely unique and independently answerable.
 
 Return ONLY a valid JSON object matching the following structure:
 {
@@ -87,7 +85,8 @@ Return ONLY a valid JSON object matching the following structure:
 
     const userPrompt = `Generate exactly 10 questions targeting age group ${ageGroup} with these specific configuration mappings:
 ${questionConfigs.map((cfg, idx) => `Question ${idx + 1}: Subject: "${cfg.subject}", Global Context: "${cfg.globalContext}"`).join('\n')}
-`;
+
+CRITICAL: Keep your thinking process extremely short (e.g., "Generating 10 questions for age ${ageGroup}"). Do NOT draft the questions or options inside your thinking block. Output the final JSON object directly.`;
 
     const response = await aiService.generateAIResponse(userPrompt, systemInstruction);
     const text = response.content;
@@ -96,14 +95,10 @@ ${questionConfigs.map((cfg, idx) => `Question ${idx + 1}: Subject: "${cfg.subjec
     }
 
     let parsed;
-    try {
-      parsed = JSON.parse(text.trim());
-    } catch (_) {
-      try {
-        parsed = JSON.parse(JSON.parse(text.trim()));
-      } catch (err) {
-        throw new Error('Failed to parse AI output as JSON');
-      }
+    if (typeof text === 'object' && text !== null) {
+      parsed = text;
+    } else {
+      parsed = safeExtractJSON(text);
     }
 
     if (!parsed.questions || !Array.isArray(parsed.questions)) {
