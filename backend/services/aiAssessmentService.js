@@ -63,16 +63,18 @@ You must strictly follow the provided parameters:
 - Question Type: ${questionType}
 - Number of Questions to generate: ${numberOfQuestions}
 
+CRITICAL RULES FOR QUESTION GENERATION:
+1. Every question in the same assessment must be uniquely different, testing a distinct subtopic or concept of "${subject}" (e.g., if subject is Physics, cover different concepts like motion, acceleration, forces, pressure, waves, electricity, thermodynamics, etc.).
+2. Do NOT repeat question structures, wording templates, or reuse the same prompt template.
+3. Distractors (incorrect choices) must be contextually plausible and related directly to the question's specific scenario.
+4. Avoid any generic placeholder-style distractors or options (like 'Primary structural framework', 'Supporting auxiliary component', 'Conceptual implementation guideline', or 'None of the above').
+5. Exactly ONE option must be clearly correct. The correctAnswer must match one of the options elements exactly.
+6. Ensure every question is independently answerable without relying on previous or subsequent questions.
+
 For each question, you MUST also generate a "references" array containing 1 to 3 reputable educational learning resources specifically relevant to the concept tested.
 The resources should be age-appropriate for the student (ageGroup: ${ageGroup}).
 URLs must be syntactically valid HTTPS links from reputable platforms (e.g., Khan Academy, Britannica, NASA, National Geographic, MIT, Stanford, official university or government education sites, MDN, Python docs).
 Do NOT invent URLs. Ensure the URLs are valid and functional.
-
-Avoid:
-- Duplicate questions or option choices.
-- Ambiguity or multiple correct interpretations.
-- Factual errors.
-- Any unsafe, biased, political, or inappropriate content.
 
 Return ONLY a valid JSON object matching the following structure:
 For MCQ (questionType = "MCQ"):
@@ -147,7 +149,7 @@ For Short Answer (questionType = "Short Answer"):
 }
 `;
 
-    const userPrompt = `Generate exactly ${numberOfQuestions} questions of type ${questionType} for subject ${subject} targeting age group ${ageGroup} under global context ${globalContext}.`;
+    const userPrompt = `Generate exactly ${numberOfQuestions} unique, concept-specific questions of type ${questionType} for subject ${subject} targeting age group ${ageGroup} under global context ${globalContext}. Ensure options are highly specific to the questions asked, and all options are completely unique.`;
 
     try {
       const response = await aiService.generateAIResponse(userPrompt, systemInstruction);
@@ -181,11 +183,21 @@ For Short Answer (questionType = "Short Answer"):
         throw new Error(`AI generated ${parsed.questions.length} questions, expected exactly ${numberOfQuestions}`);
       }
 
+      const seenQuestions = new Set();
+
       // Validate each question individual elements
       parsed.questions.forEach((q, idx) => {
         if (!q.question || typeof q.question !== 'string') {
           throw new Error(`Question at index ${idx} is missing question text`);
         }
+        
+        // Uniqueness validation check
+        const normalizedQText = q.question.trim().toLowerCase();
+        if (seenQuestions.has(normalizedQText)) {
+          throw new Error(`Duplicate question text detected at index ${idx}`);
+        }
+        seenQuestions.add(normalizedQText);
+
         if (!q.category) q.category = category;
         if (!q.difficulty) q.difficulty = difficulty;
         if (!q.bloomLevel) q.bloomLevel = bloomLevel;
@@ -197,6 +209,21 @@ For Short Answer (questionType = "Short Answer"):
           }
           if (!q.correctAnswer || !q.options.includes(q.correctAnswer)) {
             throw new Error(`MCQ at index ${idx} has invalid correctAnswer: must match one of the options`);
+          }
+          
+          // Check for placeholder/generic distractors
+          const genericPlaceholders = [
+            'primary structural framework',
+            'supporting auxiliary component',
+            'conceptual implementation guideline',
+            'none of the above options apply',
+            'all of the above'
+          ];
+          const hasPlaceholders = q.options.some(opt => 
+            genericPlaceholders.some(p => opt.toLowerCase().includes(p))
+          );
+          if (hasPlaceholders) {
+            throw new Error(`MCQ at index ${idx} contains generic placeholder options`);
           }
         } else if (questionType === 'True/False') {
           if (!q.options || !Array.isArray(q.options) || q.options.length !== 2) {
@@ -215,64 +242,10 @@ For Short Answer (questionType = "Short Answer"):
 
       return parsed.questions;
     } catch (error) {
-      console.warn('[AI Assessment] Generation failed, returning static fallback questions list:', error.message);
-      
-      const count = parseInt(numberOfQuestions) || 5;
-      const fallbackQuestions = [];
-      
-      for (let i = 0; i < count; i++) {
-        if (questionType === 'MCQ') {
-          fallbackQuestions.push({
-            id: `fb-q-${i}-${Date.now()}`,
-            question: `Explain a core concept of ${subject || 'Education'} appropriate for a student in the ${ageGroup || '15-18'} age bracket under the context of ${globalContext || 'Finland'}. (Question ${i + 1})`,
-            options: [
-              "Option A: Primary structural framework",
-              "Option B: Supporting auxiliary component",
-              "Option C: Conceptual implementation guideline",
-              "Option D: None of the above options apply"
-            ],
-            correctAnswer: "Option A: Primary structural framework",
-            category: category || 'Foundational',
-            difficulty: difficulty || 'Medium',
-            bloomLevel: bloomLevel || 'Understand',
-            questionType: 'MCQ',
-            explanation: "Option A represents the primary conceptual structure.",
-            references: [
-              {
-                title: "Introduction to educational frameworks",
-                source: "Wikipedia",
-                url: "https://en.wikipedia.org/wiki/Educational_assessment"
-              }
-            ]
-          });
-        } else if (questionType === 'True/False') {
-          fallbackQuestions.push({
-            id: `fb-q-${i}-${Date.now()}`,
-            question: `In ${globalContext || 'Finland'}, the educational framework for ${subject || 'Education'} prioritizes student competency over metrics. (Question ${i + 1})`,
-            options: ["True", "False"],
-            correctAnswer: "True",
-            category: category || 'Foundational',
-            difficulty: difficulty || 'Medium',
-            bloomLevel: bloomLevel || 'Remember',
-            questionType: 'True/False',
-            explanation: "True is correct based on general competency-based educational standards.",
-            references: []
-          });
-        } else {
-          fallbackQuestions.push({
-            id: `fb-q-${i}-${Date.now()}`,
-            question: `What is the primary objective of studying ${subject || 'Education'} under the ${globalContext || 'Finland'} framework for age group ${ageGroup || '15-18'}? (Question ${i + 1})`,
-            expectedAnswer: "To build learner competency, critical thinking and conceptual synthesis.",
-            category: category || 'Foundational',
-            difficulty: difficulty || 'Medium',
-            bloomLevel: bloomLevel || 'Analyze',
-            questionType: 'Short Answer',
-            explanation: "The core focus is on building lifelong student competency rather than rote metrics.",
-            references: []
-          });
-        }
-      }
-      return fallbackQuestions;
+      console.error('[AI Assessment] Question generation flow failed!');
+      console.error(`- Error Message: ${error.message}`);
+      console.error(`- Parameters attempted -> Subject: "${subject}", AgeGroup: "${ageGroup}", Context: "${globalContext}", Difficulty: "${difficulty}", Category: "${category}"`);
+      throw error;
     }
   },
 
